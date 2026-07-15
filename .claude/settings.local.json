@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php -v)",
+      "Bash(composer -V)",
+      "Bash(php -m)",
+      "Bash(mysql -V)",
+      "Bash(where php *)",
+      "Bash(composer show *)",
+      "Bash(composer create-project *)",
+      "Bash(composer global *)",
+      "Bash(composer install *)",
+      "Bash(php artisan *)",
+      "Bash(tasklist)",
+      "Bash(curl -s -b /tmp/cookies.txt http://127.0.0.1:8000/profile -o /dev/null -w \"profile page: %{http_code}\\\\n\")",
+      "Bash(curl -s -b /tmp/cookies.txt http://127.0.0.1:8000/dashboard)"
+    ]
+  }
+}
