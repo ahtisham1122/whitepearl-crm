@@ -44,6 +44,12 @@
                         <span class="nxl-mtext">Bookings</span>
                     </a>
                 </li>
+                <li class="nxl-item {{ request()->routeIs('installment-plans.*') ? 'active' : '' }}">
+                    <a href="{{ route('installment-plans.index') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-calendar"></i></span>
+                        <span class="nxl-mtext">Installment Plans</span>
+                    </a>
+                </li>
             </ul>
         </div>
     </div>

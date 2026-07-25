@@ -68,7 +68,7 @@ class ClientController extends Controller
     public function show(Client $client): View
     {
         $client->load(['nominee', 'documents', 'bookings' => function ($query) {
-            $query->where('status', 'Active')->with('plot.block');
+            $query->where('status', 'Active')->with(['plot.block', 'installmentPlan.installments']);
         }]);
 
         return view('clients.show', compact('client'));

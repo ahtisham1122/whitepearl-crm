@@ -12,6 +12,13 @@
         'Active' => 'bg-success',
         'Cancelled' => 'bg-secondary',
     ];
+
+    $installmentStatusBadgeClass = [
+        'Pending' => 'bg-warning',
+        'Partially Paid' => 'bg-info',
+        'Paid' => 'bg-success',
+        'Overdue' => 'bg-danger',
+    ];
 @endphp
 
 @section('content')
@@ -70,6 +77,54 @@
                                 <div class="col-12 mb-2"><strong>Remarks:</strong> {{ $booking->remarks }}</div>
                             @endif
                         </div>
+                    </div>
+                </div>
+
+                <div class="card stretch stretch-full">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0">Installment Plan</h6>
+                            @if ($booking->installmentPlan)
+                                <a href="{{ route('installment-plans.show', $booking->installmentPlan) }}" class="btn btn-sm btn-light-brand">
+                                    <i class="feather-eye"></i> View Full Plan
+                                </a>
+                            @elseif ($booking->status === 'Active')
+                                <a href="{{ route('installment-plans.create', ['booking' => $booking->id]) }}" class="btn btn-sm btn-primary">
+                                    <i class="feather-plus"></i> Create Installment Plan
+                                </a>
+                            @endif
+                        </div>
+
+                        @if ($booking->installmentPlan)
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Due Date</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($booking->installmentPlan->installments as $installment)
+                                            <tr class="{{ $installment->displayStatus() === 'Overdue' ? 'table-danger' : '' }}">
+                                                <td>{{ $installment->installment_number }}</td>
+                                                <td>{{ $installment->due_date->format('d M Y') }}</td>
+                                                <td>{{ number_format($installment->amount, 2) }}</td>
+                                                <td>
+                                                    <span class="badge {{ $installmentStatusBadgeClass[$installment->displayStatus()] ?? 'bg-secondary' }}">
+                                                        {{ $installment->displayStatus() }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                            <p class="text-muted mb-0">No installment plan yet for this booking.</p>
+                        @endif
                     </div>
                 </div>
             </div>

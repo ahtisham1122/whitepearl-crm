@@ -12,6 +12,22 @@
         'Reservation' => 'bg-info',
         'Sale' => 'bg-success',
     ];
+
+    $installmentStatusBadgeClass = [
+        'Pending' => 'bg-warning',
+        'Partially Paid' => 'bg-info',
+        'Paid' => 'bg-success',
+        'Overdue' => 'bg-danger',
+    ];
+
+    $upcomingInstallments = $client->bookings
+        ->filter(fn ($booking) => $booking->installmentPlan)
+        ->flatMap(function ($booking) {
+            return $booking->installmentPlan->installments
+                ->filter(fn ($installment) => $installment->status !== 'Paid')
+                ->map(fn ($installment) => ['booking' => $booking, 'installment' => $installment]);
+        })
+        ->sortBy(fn ($row) => $row['installment']->due_date);
 @endphp
 
 @section('content')
@@ -162,6 +178,48 @@
                             </div>
                         @else
                             <p class="text-muted mb-0">This client has not booked any plots yet.</p>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="card stretch stretch-full mb-4">
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-3">Upcoming Installments</h6>
+                        @if ($upcomingInstallments->isNotEmpty())
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Plot</th>
+                                            <th>#</th>
+                                            <th>Due Date</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($upcomingInstallments as $row)
+                                            <tr class="{{ $row['installment']->displayStatus() === 'Overdue' ? 'table-danger' : '' }}">
+                                                <td>
+                                                    <a href="{{ route('bookings.show', $row['booking']) }}">
+                                                        {{ $row['booking']->plot->block->name }} - {{ $row['booking']->plot->plot_number }}
+                                                    </a>
+                                                </td>
+                                                <td>{{ $row['installment']->installment_number }}</td>
+                                                <td>{{ $row['installment']->due_date->format('d M Y') }}</td>
+                                                <td>{{ number_format($row['installment']->amount, 2) }}</td>
+                                                <td>
+                                                    <span class="badge {{ $installmentStatusBadgeClass[$row['installment']->displayStatus()] ?? 'bg-secondary' }}">
+                                                        {{ $row['installment']->displayStatus() }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                            <p class="text-muted mb-0">No upcoming installments.</p>
                         @endif
                     </div>
                 </div>
