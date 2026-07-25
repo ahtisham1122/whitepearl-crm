@@ -25,3 +25,4 @@ require __DIR__.'/installment-plans.php';
 require __DIR__.'/payments.php';
 require __DIR__.'/receipts.php';
 require __DIR__.'/reports.php';
+require __DIR__.'/activity-logs.php';

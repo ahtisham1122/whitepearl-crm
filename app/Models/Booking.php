@@ -6,9 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Booking extends Model
 {
+    use LogsActivity;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -75,5 +79,27 @@ class Booking extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * A cancelled booking is really just an "updated" event underneath
+     * (the status field changed) -- this gives it a more specific,
+     * readable description on the Activity Log page instead of the
+     * generic "Booking updated" whenever the change was a cancellation.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logFillable()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->useLogName('booking')
+            ->setDescriptionForEvent(function (string $eventName) {
+                if ($eventName === 'updated' && $this->status === 'Cancelled') {
+                    return 'Booking cancelled';
+                }
+
+                return "Booking {$eventName}";
+            });
     }
 }

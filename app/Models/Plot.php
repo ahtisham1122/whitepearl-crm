@@ -6,9 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Plot extends Model
 {
+    use LogsActivity;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -73,5 +77,15 @@ class Plot extends Model
     public function activeBooking(): HasOne
     {
         return $this->hasOne(Booking::class)->where('status', 'Active')->latestOfMany();
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logFillable()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->useLogName('plot')
+            ->setDescriptionForEvent(fn (string $eventName) => "Plot {$eventName}");
     }
 }

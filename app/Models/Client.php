@@ -6,9 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Client extends Model
 {
+    use LogsActivity;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -77,5 +81,20 @@ class Client extends Model
     public function payments(): HasManyThrough
     {
         return $this->hasManyThrough(Payment::class, Booking::class);
+    }
+
+    /**
+     * Which attributes to log, and what to call each event in the
+     * Activity Log page. logOnlyDirty() means an update only records the
+     * fields that actually changed, not the whole row every time.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logFillable()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->useLogName('client')
+            ->setDescriptionForEvent(fn (string $eventName) => "Client {$eventName}");
     }
 }

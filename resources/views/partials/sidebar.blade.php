@@ -95,6 +95,14 @@
                         </li>
                     </ul>
                 </li>
+                @hasanyrole('Super Admin|Admin')
+                    <li class="nxl-item {{ request()->routeIs('activity-logs.*') ? 'active' : '' }}">
+                        <a href="{{ route('activity-logs.index') }}" class="nxl-link">
+                            <span class="nxl-micon"><i class="feather-activity"></i></span>
+                            <span class="nxl-mtext">Activity Logs</span>
+                        </a>
+                    </li>
+                @endhasanyrole
             </ul>
         </div>
     </div>

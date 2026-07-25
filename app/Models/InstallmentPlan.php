@@ -5,9 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class InstallmentPlan extends Model
 {
+    use LogsActivity;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -49,5 +53,21 @@ class InstallmentPlan extends Model
     public function installments(): HasMany
     {
         return $this->hasMany(Installment::class)->orderBy('installment_number');
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logFillable()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->useLogName('installment_plan')
+            ->setDescriptionForEvent(function (string $eventName) {
+                if ($eventName === 'updated' && $this->status === 'Completed') {
+                    return 'Installment plan completed';
+                }
+
+                return "Installment plan {$eventName}";
+            });
     }
 }

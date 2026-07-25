@@ -4,9 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Payment extends Model
 {
+    use LogsActivity;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -54,5 +58,24 @@ class Payment extends Model
     public function installment(): BelongsTo
     {
         return $this->belongsTo(Installment::class);
+    }
+
+    /**
+     * A payment IS a receipt (see receipt_number above) -- so logging a
+     * payment being created also covers "Receipt generated" as one entry,
+     * rather than two log rows for what is really one action.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logFillable()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->useLogName('payment')
+            ->setDescriptionForEvent(fn (string $eventName) => match ($eventName) {
+                'created' => 'Payment received',
+                'deleted' => 'Payment deleted',
+                default => "Payment {$eventName}",
+            });
     }
 }
