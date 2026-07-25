@@ -62,6 +62,39 @@
                         <span class="nxl-mtext">Receipts</span>
                     </a>
                 </li>
+                <li class="nxl-item nxl-hasmenu {{ request()->routeIs('reports.*') ? 'active nxl-trigger' : '' }}">
+                    <a href="javascript:void(0);" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-bar-chart-2"></i></span>
+                        <span class="nxl-mtext">Reports</span>
+                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                    </a>
+                    <ul class="nxl-submenu">
+                        <li class="{{ request()->routeIs('reports.clients*') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('reports.clients') }}">All Clients</a>
+                        </li>
+                        <li class="{{ request()->routeIs('reports.plots*') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('reports.plots') }}">Plots by Status</a>
+                        </li>
+                        <li class="{{ request()->routeIs('reports.blocks*') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('reports.blocks') }}">Block-wise Summary</a>
+                        </li>
+                        <li class="{{ request()->routeIs('reports.collection*') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('reports.collection') }}">Collection Report</a>
+                        </li>
+                        <li class="{{ request()->routeIs('reports.outstanding*') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('reports.outstanding') }}">Outstanding Balances</a>
+                        </li>
+                        <li class="{{ request()->routeIs('reports.due-installments*') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('reports.due-installments') }}">Due Installments</a>
+                        </li>
+                        <li class="{{ request()->routeIs('reports.defaulters*') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('reports.defaulters') }}">Defaulters</a>
+                        </li>
+                        <li class="{{ request()->routeIs('reports.sales*') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('reports.sales') }}">Sales Report</a>
+                        </li>
+                    </ul>
+                </li>
             </ul>
         </div>
     </div>
