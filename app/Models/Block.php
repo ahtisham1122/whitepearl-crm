@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Block extends Model
 {
@@ -15,4 +16,12 @@ class Block extends Model
         'name',
         'description',
     ];
+
+    /**
+     * A block has many plots.
+     */
+    public function plots(): HasMany
+    {
+        return $this->hasMany(Plot::class);
+    }
 }

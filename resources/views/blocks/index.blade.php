@@ -45,13 +45,10 @@
                                             <td>{{ $loop->iteration }}</td>
                                             <td>{{ $block->name }}</td>
                                             <td>{{ $block->description ?? '—' }}</td>
-                                            {{-- Plots don't exist yet, so these counts are hardcoded to 0 for now.
-                                                 Once the Plots module is built, these will be calculated from
-                                                 the block's related plots instead. --}}
-                                            <td>0</td>
-                                            <td>0</td>
-                                            <td>0</td>
-                                            <td>0</td>
+                                            <td>{{ $block->plots_count }}</td>
+                                            <td>{{ $block->available_plots_count }}</td>
+                                            <td>{{ $block->sold_plots_count }}</td>
+                                            <td>{{ $block->reserved_plots_count }}</td>
                                             <td class="text-end">
                                                 <a href="{{ route('blocks.edit', $block) }}" class="btn btn-sm btn-light-brand">
                                                     <i class="feather-edit-2"></i> Edit

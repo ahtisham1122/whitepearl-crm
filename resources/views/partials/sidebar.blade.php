@@ -26,6 +26,12 @@
                         <span class="nxl-mtext">Blocks</span>
                     </a>
                 </li>
+                <li class="nxl-item {{ request()->routeIs('plots.*') ? 'active' : '' }}">
+                    <a href="{{ route('plots.index') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-map"></i></span>
+                        <span class="nxl-mtext">Plots</span>
+                    </a>
+                </li>
             </ul>
         </div>
     </div>

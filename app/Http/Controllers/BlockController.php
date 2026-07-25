@@ -15,7 +15,14 @@ class BlockController extends Controller
      */
     public function index(): View
     {
-        $blocks = Block::latest()->paginate(10);
+        $blocks = Block::withCount([
+            'plots',
+            'plots as available_plots_count' => fn ($query) => $query->where('status', 'Available'),
+            'plots as sold_plots_count' => fn ($query) => $query->where('status', 'Sold'),
+            'plots as reserved_plots_count' => fn ($query) => $query->where('status', 'Reserved'),
+        ])
+            ->latest()
+            ->paginate(10);
 
         return view('blocks.index', compact('blocks'));
     }
@@ -67,6 +74,12 @@ class BlockController extends Controller
      */
     public function destroy(Block $block): RedirectResponse
     {
+        if ($block->plots()->exists()) {
+            return redirect()
+                ->route('blocks.index')
+                ->with('error', 'This block still has plots in it. Remove or reassign its plots before deleting it.');
+        }
+
         $block->delete();
 
         return redirect()

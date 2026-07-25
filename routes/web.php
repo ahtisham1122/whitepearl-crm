@@ -18,3 +18,4 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__.'/auth.php';
 require __DIR__.'/blocks.php';
+require __DIR__.'/plots.php';
