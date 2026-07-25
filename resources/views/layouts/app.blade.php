@@ -25,6 +25,7 @@
 
     <main class="nxl-container">
         <div class="nxl-content">
+            @include('partials.flash-messages')
             @yield('content')
         </div>
         @include('partials.footer')
