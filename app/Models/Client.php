@@ -58,4 +58,12 @@ class Client extends Model
     {
         return $this->hasMany(ClientDocument::class);
     }
+
+    /**
+     * A client can have many bookings over time (reservations and sales).
+     */
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class);
+    }
 }

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Plot extends Model
 {
@@ -52,5 +54,24 @@ class Plot extends Model
     public function block(): BelongsTo
     {
         return $this->belongsTo(Block::class);
+    }
+
+    /**
+     * A plot can have many bookings over time (past cancellations plus
+     * the current one), which is why this is hasMany and not hasOne.
+     */
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class);
+    }
+
+    /**
+     * The plot's current, non-cancelled booking, if any. This is a "one of
+     * many" relationship: among all of this plot's bookings, take the most
+     * recent one that is still Active.
+     */
+    public function activeBooking(): HasOne
+    {
+        return $this->hasOne(Booking::class)->where('status', 'Active')->latestOfMany();
     }
 }

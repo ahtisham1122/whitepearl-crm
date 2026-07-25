@@ -38,6 +38,12 @@
                         <span class="nxl-mtext">Clients</span>
                     </a>
                 </li>
+                <li class="nxl-item {{ request()->routeIs('bookings.*') ? 'active' : '' }}">
+                    <a href="{{ route('bookings.index') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-file-text"></i></span>
+                        <span class="nxl-mtext">Bookings</span>
+                    </a>
+                </li>
             </ul>
         </div>
     </div>

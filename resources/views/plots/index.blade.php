@@ -99,6 +99,9 @@
                                             </td>
                                             <td>{{ number_format($plot->total_price, 2) }}</td>
                                             <td class="text-end">
+                                                <a href="{{ route('plots.show', $plot) }}" class="btn btn-sm btn-light-brand">
+                                                    <i class="feather-eye"></i> View
+                                                </a>
                                                 <a href="{{ route('plots.edit', $plot) }}" class="btn btn-sm btn-light-brand">
                                                     <i class="feather-edit-2"></i> Edit
                                                 </a>

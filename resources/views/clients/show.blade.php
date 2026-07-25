@@ -7,6 +7,11 @@
         'Active' => 'bg-success',
         'Inactive' => 'bg-secondary',
     ];
+
+    $bookingTypeBadgeClass = [
+        'Reservation' => 'bg-info',
+        'Sale' => 'bg-success',
+    ];
 @endphp
 
 @section('content')
@@ -121,21 +126,57 @@
                     </div>
                 </div>
 
+                <div class="card stretch stretch-full mb-4">
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-3">Owned Plots</h6>
+                        @if ($client->bookings->isNotEmpty())
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Plot</th>
+                                            <th>Type</th>
+                                            <th>Final Price</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($client->bookings as $booking)
+                                            <tr>
+                                                <td>{{ $booking->plot->block->name }} - {{ $booking->plot->plot_number }}</td>
+                                                <td>
+                                                    <span class="badge {{ $bookingTypeBadgeClass[$booking->booking_type] ?? 'bg-secondary' }}">
+                                                        {{ $booking->booking_type }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ number_format($booking->final_price, 2) }}</td>
+                                                <td class="text-end">
+                                                    <a href="{{ route('bookings.show', $booking) }}" class="btn btn-sm btn-light-brand">
+                                                        <i class="feather-eye"></i> View
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                            <p class="text-muted mb-0">This client has not booked any plots yet.</p>
+                        @endif
+                    </div>
+                </div>
+
                 <div class="card stretch stretch-full">
                     <div class="card-body">
-                        <h6 class="fw-bold mb-3">Booking &amp; Payments</h6>
+                        <h6 class="fw-bold mb-3">Payments</h6>
                         <div class="row text-center">
-                            <div class="col-md-4 mb-2">
-                                <div class="text-muted fs-12 mb-1">Owned Plots</div>
-                                <div class="fw-medium">Will be available after booking</div>
-                            </div>
-                            <div class="col-md-4 mb-2">
+                            <div class="col-md-6 mb-2">
                                 <div class="text-muted fs-12 mb-1">Payment History</div>
-                                <div class="fw-medium">Will be available after booking</div>
+                                <div class="fw-medium">Will be available after the Payments module</div>
                             </div>
-                            <div class="col-md-4 mb-2">
+                            <div class="col-md-6 mb-2">
                                 <div class="text-muted fs-12 mb-1">Outstanding Balance</div>
-                                <div class="fw-medium">Will be available after booking</div>
+                                <div class="fw-medium">Will be available after the Payments module</div>
                             </div>
                         </div>
                     </div>

@@ -60,6 +60,16 @@ class PlotController extends Controller
     }
 
     /**
+     * Display the specified resource.
+     */
+    public function show(Plot $plot): View
+    {
+        $plot->load(['block', 'activeBooking.client']);
+
+        return view('plots.show', compact('plot'));
+    }
+
+    /**
      * Show the form for editing the specified resource.
      */
     public function edit(Plot $plot): View

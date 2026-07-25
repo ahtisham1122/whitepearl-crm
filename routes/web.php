@@ -20,3 +20,4 @@ require __DIR__.'/auth.php';
 require __DIR__.'/blocks.php';
 require __DIR__.'/plots.php';
 require __DIR__.'/clients.php';
+require __DIR__.'/bookings.php';
