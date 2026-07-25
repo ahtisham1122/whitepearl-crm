@@ -18,10 +18,7 @@
     </div>
 
     <div class="print-sheet">
-        <div class="text-center mb-4">
-            <h4 class="fw-bold mb-1">White Pearl City Gwadar</h4>
-            <p class="text-muted mb-0">Payment Receipt</p>
-        </div>
+        @include('partials.company-header', ['subtitle' => 'Payment Receipt'])
 
         <div class="row mb-4">
             <div class="col-6">
@@ -45,7 +42,7 @@
             <tbody>
                 <tr>
                     <th class="w-50">Amount Received</th>
-                    <td>Rs. {{ number_format($payment->amount, 2) }}</td>
+                    <td>{{ setting('currency_symbol') }} {{ number_format($payment->amount, 2) }}</td>
                 </tr>
                 <tr>
                     <th>Amount in Words</th>
@@ -79,7 +76,7 @@
                 @if ($payment->late_fee > 0)
                     <tr>
                         <th>Late Fee Charged</th>
-                        <td>Rs. {{ number_format($payment->late_fee, 2) }}</td>
+                        <td>{{ setting('currency_symbol') }} {{ number_format($payment->late_fee, 2) }}</td>
                     </tr>
                 @endif
                 @if ($payment->remarks)
@@ -90,7 +87,7 @@
                 @endif
                 <tr class="table-light">
                     <th>Remaining Balance (this booking)</th>
-                    <td><strong>Rs. {{ number_format($remainingBalance, 2) }}</strong></td>
+                    <td><strong>{{ setting('currency_symbol') }} {{ number_format($remainingBalance, 2) }}</strong></td>
                 </tr>
             </tbody>
         </table>
@@ -104,6 +101,8 @@
             </div>
         </div>
 
-        <p class="text-muted text-center mb-0 fs-12 mt-4">This is a system-generated receipt. Thank you.</p>
+        <p class="text-muted text-center mb-0 fs-12 mt-4">
+            {{ setting('receipt_footer_text') ?: 'This is a system-generated receipt. Thank you.' }}
+        </p>
     </div>
 @endsection

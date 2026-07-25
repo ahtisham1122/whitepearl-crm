@@ -11,11 +11,8 @@
     </div>
 
     <div class="print-sheet">
-        <div class="text-center mb-4">
-            <h4 class="fw-bold mb-1">White Pearl City Gwadar</h4>
-            <p class="text-muted mb-0">{{ $title }}</p>
-            <p class="text-muted fs-12 mb-0">Generated {{ now()->format('d M Y, h:i A') }}</p>
-        </div>
+        @include('partials.company-header', ['subtitle' => $title])
+        <p class="text-muted fs-12 text-center mb-4">Generated {{ now()->format('d M Y, h:i A') }}</p>
 
         @include('reports.partials.table')
     </div>

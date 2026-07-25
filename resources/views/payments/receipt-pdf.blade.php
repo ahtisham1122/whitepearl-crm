@@ -81,8 +81,7 @@
 
 <body>
     <div class="header">
-        <h1>White Pearl City Gwadar</h1>
-        <p>Payment Receipt</p>
+        @include('partials.company-header-pdf', ['subtitle' => 'Payment Receipt'])
     </div>
 
     <table class="meta">
@@ -105,7 +104,7 @@
     <table class="details">
         <tr>
             <th>Amount Received</th>
-            <td>Rs. {{ number_format($payment->amount, 2) }}</td>
+            <td>{{ setting('currency_symbol') }} {{ number_format($payment->amount, 2) }}</td>
         </tr>
         <tr>
             <th>Amount in Words</th>
@@ -139,7 +138,7 @@
         @if ($payment->late_fee > 0)
             <tr>
                 <th>Late Fee Charged</th>
-                <td>Rs. {{ number_format($payment->late_fee, 2) }}</td>
+                <td>{{ setting('currency_symbol') }} {{ number_format($payment->late_fee, 2) }}</td>
             </tr>
         @endif
         @if ($payment->remarks)
@@ -150,7 +149,7 @@
         @endif
         <tr>
             <th>Remaining Balance (this booking)</th>
-            <td><strong>Rs. {{ number_format($remainingBalance, 2) }}</strong></td>
+            <td><strong>{{ setting('currency_symbol') }} {{ number_format($remainingBalance, 2) }}</strong></td>
         </tr>
     </table>
 
@@ -161,7 +160,7 @@
         </tr>
     </table>
 
-    <p class="footer">This is a system-generated receipt. Thank you.</p>
+    <p class="footer">{{ setting('receipt_footer_text') ?: 'This is a system-generated receipt. Thank you.' }}</p>
 </body>
 
 </html>

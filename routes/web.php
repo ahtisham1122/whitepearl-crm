@@ -26,3 +26,4 @@ require __DIR__.'/payments.php';
 require __DIR__.'/receipts.php';
 require __DIR__.'/reports.php';
 require __DIR__.'/activity-logs.php';
+require __DIR__.'/settings.php';

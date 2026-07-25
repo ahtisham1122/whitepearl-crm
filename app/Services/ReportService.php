@@ -48,7 +48,7 @@ class ReportService
             'City' => $client->city ?? '—',
             'Status' => $client->status,
             'Owned Plots' => $client->owned_plots_count,
-            'Outstanding Balance' => number_format($outstandingByClient[$client->id] ?? 0, 2),
+            'Outstanding Balance' => $this->money($outstandingByClient[$client->id] ?? 0),
         ]);
 
         return [
@@ -74,7 +74,7 @@ class ReportService
             'Block' => $plot->block->name,
             'Size' => $plot->plot_size,
             'Category' => $plot->category,
-            'Total Price' => number_format($plot->total_price, 2),
+            'Total Price' => $this->money($plot->total_price),
             'Status' => $plot->status,
             'Owner' => $plot->activeBooking?->client->full_name ?? '—',
         ]);
@@ -109,7 +109,7 @@ class ReportService
             'Available' => $block->available_plots_count,
             'Sold' => $block->sold_plots_count,
             'Reserved' => $block->reserved_plots_count,
-            'Revenue' => number_format($revenueByBlock[$block->id] ?? 0, 2),
+            'Revenue' => $this->money($revenueByBlock[$block->id] ?? 0),
         ]);
 
         return [
@@ -135,7 +135,7 @@ class ReportService
             'Receipt #' => $payment->receipt_number,
             'Client' => $payment->booking->client->full_name,
             'Plot' => $payment->booking->plot->block->name.' - '.$payment->booking->plot->plot_number,
-            'Amount' => number_format($payment->amount, 2),
+            'Amount' => $this->money($payment->amount),
             'Method' => $payment->payment_method,
         ]);
 
@@ -146,7 +146,7 @@ class ReportService
             'rows' => $rows,
             'totalsRow' => [
                 'Date' => '', 'Receipt #' => '', 'Client' => '', 'Plot' => 'TOTAL',
-                'Amount' => number_format($payments->sum('amount'), 2), 'Method' => '',
+                'Amount' => $this->money($payments->sum('amount')), 'Method' => '',
             ],
         ];
     }
@@ -163,7 +163,7 @@ class ReportService
                 'Client ID' => $clients[$clientId]->client_id,
                 'Name' => $clients[$clientId]->full_name,
                 'Phone' => $clients[$clientId]->phone,
-                'Outstanding Balance' => number_format($amount, 2),
+                'Outstanding Balance' => $this->money($amount),
             ])
             ->values();
 
@@ -192,7 +192,7 @@ class ReportService
             'Installment #' => $installment->installment_number,
             'Client' => $installment->installmentPlan->booking->client->full_name,
             'Plot' => $installment->installmentPlan->booking->plot->block->name.' - '.$installment->installmentPlan->booking->plot->plot_number,
-            'Amount Due' => number_format(max($installment->amount + $installment->late_fee - $installment->paid_amount, 0), 2),
+            'Amount Due' => $this->money(max($installment->amount + $installment->late_fee - $installment->paid_amount, 0)),
             'Status' => $installment->displayStatus(),
         ]);
 
@@ -218,7 +218,7 @@ class ReportService
             'Client' => $installment->installmentPlan->booking->client->full_name,
             'Phone' => $installment->installmentPlan->booking->client->phone,
             'Plot' => $installment->installmentPlan->booking->plot->block->name.' - '.$installment->installmentPlan->booking->plot->plot_number,
-            'Overdue Amount' => number_format(max($installment->amount + $installment->late_fee - $installment->paid_amount, 0), 2),
+            'Overdue Amount' => $this->money(max($installment->amount + $installment->late_fee - $installment->paid_amount, 0)),
             'Days Overdue' => (int) $installment->due_date->diffInDays(today()),
         ]);
 
@@ -246,7 +246,7 @@ class ReportService
             'Client' => $booking->client->full_name,
             'Plot' => $booking->plot->plot_number,
             'Block' => $booking->plot->block->name,
-            'Final Price' => number_format($booking->final_price, 2),
+            'Final Price' => $this->money($booking->final_price),
             'Sales Person' => $booking->sales_person ?? '—',
         ]);
 
@@ -257,7 +257,7 @@ class ReportService
             'rows' => $rows,
             'totalsRow' => [
                 'Date' => '', 'Client' => '', 'Plot' => '', 'Block' => 'TOTAL',
-                'Final Price' => number_format($bookings->sum('final_price'), 2), 'Sales Person' => '',
+                'Final Price' => $this->money($bookings->sum('final_price')), 'Sales Person' => '',
             ],
         ];
     }
@@ -289,5 +289,15 @@ class ReportService
         $toDate = $to ? Carbon::parse($to)->endOfDay() : $defaultTo->copy()->endOfDay();
 
         return [$fromDate, $toDate];
+    }
+
+    /**
+     * Format an amount with the configured currency symbol, e.g. "Rs. 1,234.00".
+     * One place to change if the symbol setting is ever renamed or the
+     * format ever needs to change, instead of every report doing its own thing.
+     */
+    private function money(float $amount): string
+    {
+        return setting('currency_symbol', 'Rs.').' '.number_format($amount, 2);
     }
 }

@@ -102,6 +102,12 @@
                             <span class="nxl-mtext">Activity Logs</span>
                         </a>
                     </li>
+                    <li class="nxl-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+                        <a href="{{ route('settings.edit') }}" class="nxl-link">
+                            <span class="nxl-micon"><i class="feather-settings"></i></span>
+                            <span class="nxl-mtext">Settings</span>
+                        </a>
+                    </li>
                 @endhasanyrole
             </ul>
         </div>

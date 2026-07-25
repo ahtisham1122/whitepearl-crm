@@ -52,8 +52,7 @@
 
 <body>
     <div class="header">
-        <h1>White Pearl City Gwadar</h1>
-        <p>{{ $title }}</p>
+        @include('partials.company-header-pdf', ['subtitle' => $title])
         <p>Generated {{ now()->format('d M Y, h:i A') }}</p>
     </div>
 
