@@ -160,4 +160,16 @@ class PaymentService
             ->flatMap(fn (Booking $booking) => $booking->installmentPlan?->installments ?? collect())
             ->sum(fn (Installment $installment) => max($installment->amount + $installment->late_fee - $installment->paid_amount, 0));
     }
+
+    /**
+     * How much is still owed on one specific booking's installment plan.
+     * This is the single place that math lives -- the booking show page,
+     * the "receive payment" form, and receipts all call this instead of
+     * each repeating the same sum themselves.
+     */
+    public function remainingBalanceForBooking(Booking $booking): float
+    {
+        return (float) ($booking->installmentPlan?->installments
+            ->sum(fn (Installment $installment) => max($installment->amount + $installment->late_fee - $installment->paid_amount, 0)) ?? 0);
+    }
 }

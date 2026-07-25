@@ -56,6 +56,12 @@
                         <span class="nxl-mtext">Payments</span>
                     </a>
                 </li>
+                <li class="nxl-item {{ request()->routeIs('receipts.*') ? 'active' : '' }}">
+                    <a href="{{ route('receipts.index') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-file"></i></span>
+                        <span class="nxl-mtext">Receipts</span>
+                    </a>
+                </li>
             </ul>
         </div>
     </div>

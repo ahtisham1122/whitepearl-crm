@@ -14,7 +14,10 @@
                 <li class="breadcrumb-item">{{ $payment->receipt_number }}</li>
             </ul>
         </div>
-        <div class="page-header-right ms-auto">
+        <div class="page-header-right ms-auto d-flex gap-2">
+            <a href="{{ route('payments.receipt.pdf', $payment) }}" class="btn btn-outline-primary">
+                <i class="feather-download me-2"></i>Download PDF
+            </a>
             <a href="{{ route('payments.receipt', $payment) }}" class="btn btn-primary">
                 <i class="feather-printer me-2"></i>View / Print Receipt
             </a>

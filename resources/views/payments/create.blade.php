@@ -12,9 +12,6 @@
 
     $unpaidInstallments = $selectedBooking?->installmentPlan?->installments
         ->filter(fn ($installment) => $installment->status !== 'Paid');
-
-    $remainingForBooking = $selectedBooking?->installmentPlan?->installments
-        ->sum(fn ($installment) => max($installment->amount + $installment->late_fee - $installment->paid_amount, 0));
 @endphp
 
 @section('content')

@@ -23,3 +23,4 @@ require __DIR__.'/clients.php';
 require __DIR__.'/bookings.php';
 require __DIR__.'/installment-plans.php';
 require __DIR__.'/payments.php';
+require __DIR__.'/receipts.php';

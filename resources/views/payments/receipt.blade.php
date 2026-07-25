@@ -7,9 +7,14 @@
         <a href="{{ route('payments.show', $payment) }}" class="btn btn-light">
             <i class="feather-arrow-left me-2"></i>Back
         </a>
-        <button type="button" class="btn btn-primary" onclick="window.print();">
-            <i class="feather-printer me-2"></i>Print Receipt
-        </button>
+        <div class="d-flex gap-2">
+            <a href="{{ route('payments.receipt.pdf', $payment) }}" class="btn btn-outline-primary">
+                <i class="feather-download me-2"></i>Download PDF
+            </a>
+            <button type="button" class="btn btn-primary" onclick="window.print();">
+                <i class="feather-printer me-2"></i>Print Receipt
+            </button>
+        </div>
     </div>
 
     <div class="print-sheet">
@@ -26,7 +31,9 @@
             </div>
             <div class="col-6 text-md-end">
                 <p class="mb-1"><strong>Client:</strong> {{ $payment->booking->client->full_name }}</p>
-                <p class="mb-1"><strong>Client ID:</strong> {{ $payment->booking->client->client_id }}</p>
+                <p class="mb-1"><strong>Father Name:</strong> {{ $payment->booking->client->father_name ?? '—' }}</p>
+                <p class="mb-1"><strong>CNIC:</strong> {{ $payment->booking->client->cnic }}</p>
+                <p class="mb-1"><strong>Phone:</strong> {{ $payment->booking->client->phone }}</p>
                 <p class="mb-0">
                     <strong>Plot:</strong>
                     {{ $payment->booking->plot->block->name }} - {{ $payment->booking->plot->plot_number }}
@@ -39,6 +46,10 @@
                 <tr>
                     <th class="w-50">Amount Received</th>
                     <td>Rs. {{ number_format($payment->amount, 2) }}</td>
+                </tr>
+                <tr>
+                    <th>Amount in Words</th>
+                    <td>{{ \App\Support\NumberToWords::convertRupees((float) $payment->amount) }}</td>
                 </tr>
                 <tr>
                     <th>Payment Method</th>
@@ -78,12 +89,21 @@
                     </tr>
                 @endif
                 <tr class="table-light">
-                    <th>Client's Total Outstanding Balance</th>
-                    <td><strong>Rs. {{ number_format($outstandingBalance, 2) }}</strong></td>
+                    <th>Remaining Balance (this booking)</th>
+                    <td><strong>Rs. {{ number_format($remainingBalance, 2) }}</strong></td>
                 </tr>
             </tbody>
         </table>
 
-        <p class="text-muted text-center mb-0 fs-12">This is a system-generated receipt. Thank you.</p>
+        <div class="row mt-5 pt-5">
+            <div class="col-6">
+                <p class="mb-0 border-top pt-2">Received By</p>
+            </div>
+            <div class="col-6 text-end">
+                <p class="mb-0 border-top pt-2">Authorized Signature</p>
+            </div>
+        </div>
+
+        <p class="text-muted text-center mb-0 fs-12 mt-4">This is a system-generated receipt. Thank you.</p>
     </div>
 @endsection

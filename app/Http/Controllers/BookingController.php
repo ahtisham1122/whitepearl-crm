@@ -7,14 +7,17 @@ use App\Models\Booking;
 use App\Models\Client;
 use App\Models\Plot;
 use App\Services\BookingService;
+use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class BookingController extends Controller
 {
-    public function __construct(private readonly BookingService $bookingService)
-    {
+    public function __construct(
+        private readonly BookingService $bookingService,
+        private readonly PaymentService $paymentService,
+    ) {
     }
 
     /**
@@ -71,7 +74,9 @@ class BookingController extends Controller
             $query->latest('payment_date');
         }]);
 
-        return view('bookings.show', compact('booking'));
+        $remainingForBooking = $this->paymentService->remainingBalanceForBooking($booking);
+
+        return view('bookings.show', compact('booking', 'remainingForBooking'));
     }
 
     /**

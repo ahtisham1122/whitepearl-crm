@@ -6,8 +6,10 @@ use App\Http\Requests\StorePaymentRequest;
 use App\Models\Booking;
 use App\Models\Payment;
 use App\Services\PaymentService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 class PaymentController extends Controller
@@ -52,15 +54,21 @@ class PaymentController extends Controller
             ->get();
 
         $selectedBooking = null;
+        $remainingForBooking = null;
 
         if ($request->filled('booking_id')) {
             $selectedBooking = Booking::with(['client', 'plot.block', 'installmentPlan.installments', 'payments'])
                 ->find($request->integer('booking_id'));
+
+            if ($selectedBooking) {
+                $remainingForBooking = $this->paymentService->remainingBalanceForBooking($selectedBooking);
+            }
         }
 
         return view('payments.create', [
             'bookings' => $bookings,
             'selectedBooking' => $selectedBooking,
+            'remainingForBooking' => $remainingForBooking,
         ]);
     }
 
@@ -93,8 +101,22 @@ class PaymentController extends Controller
     {
         $payment->load(['booking.client', 'booking.plot.block', 'installment']);
 
-        $outstandingBalance = $this->paymentService->outstandingBalanceForClient($payment->booking->client);
+        $remainingBalance = $this->paymentService->remainingBalanceForBooking($payment->booking);
 
-        return view('payments.receipt', compact('payment', 'outstandingBalance'));
+        return view('payments.receipt', compact('payment', 'remainingBalance'));
+    }
+
+    /**
+     * Download the receipt as a PDF.
+     */
+    public function receiptPdf(Payment $payment): Response
+    {
+        $payment->load(['booking.client', 'booking.plot.block', 'installment']);
+
+        $remainingBalance = $this->paymentService->remainingBalanceForBooking($payment->booking);
+
+        $pdf = Pdf::loadView('payments.receipt-pdf', compact('payment', 'remainingBalance'));
+
+        return $pdf->download($payment->receipt_number.'.pdf');
     }
 }

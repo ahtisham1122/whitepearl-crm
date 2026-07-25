@@ -19,9 +19,6 @@
         'Paid' => 'bg-success',
         'Overdue' => 'bg-danger',
     ];
-
-    $remainingForBooking = $booking->installmentPlan?->installments
-        ->sum(fn ($installment) => max($installment->amount + $installment->late_fee - $installment->paid_amount, 0));
 @endphp
 
 @section('content')
