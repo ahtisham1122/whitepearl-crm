@@ -32,6 +32,12 @@
                         <span class="nxl-mtext">Plots</span>
                     </a>
                 </li>
+                <li class="nxl-item {{ request()->routeIs('clients.*') ? 'active' : '' }}">
+                    <a href="{{ route('clients.index') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-users"></i></span>
+                        <span class="nxl-mtext">Clients</span>
+                    </a>
+                </li>
             </ul>
         </div>
     </div>
