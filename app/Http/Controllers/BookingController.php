@@ -67,7 +67,9 @@ class BookingController extends Controller
      */
     public function show(Booking $booking): View
     {
-        $booking->load(['client', 'plot.block', 'installmentPlan.installments']);
+        $booking->load(['client', 'plot.block', 'installmentPlan.installments', 'payments' => function ($query) {
+            $query->latest('payment_date');
+        }]);
 
         return view('bookings.show', compact('booking'));
     }

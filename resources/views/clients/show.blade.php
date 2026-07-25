@@ -224,19 +224,55 @@
                     </div>
                 </div>
 
+                <div class="card stretch stretch-full mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0">Outstanding Balance</h6>
+                        </div>
+                        <h4 class="mb-0 {{ $outstandingBalance > 0 ? 'text-danger' : 'text-success' }}">
+                            Rs. {{ number_format($outstandingBalance, 2) }}
+                        </h4>
+                        <p class="text-muted fs-12 mb-0">Sum of everything still owed across all active bookings.</p>
+                    </div>
+                </div>
+
                 <div class="card stretch stretch-full">
                     <div class="card-body">
-                        <h6 class="fw-bold mb-3">Payments</h6>
-                        <div class="row text-center">
-                            <div class="col-md-6 mb-2">
-                                <div class="text-muted fs-12 mb-1">Payment History</div>
-                                <div class="fw-medium">Will be available after the Payments module</div>
+                        <h6 class="fw-bold mb-3">Payment History</h6>
+                        @if ($payments->isNotEmpty())
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Receipt #</th>
+                                            <th>Plot</th>
+                                            <th>Date</th>
+                                            <th>Amount</th>
+                                            <th>Method</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($payments as $payment)
+                                            <tr>
+                                                <td>{{ $payment->receipt_number }}</td>
+                                                <td>{{ $payment->booking->plot->block->name }} - {{ $payment->booking->plot->plot_number }}</td>
+                                                <td>{{ $payment->payment_date->format('d M Y') }}</td>
+                                                <td>{{ number_format($payment->amount, 2) }}</td>
+                                                <td>{{ $payment->payment_method }}</td>
+                                                <td class="text-end">
+                                                    <a href="{{ route('payments.receipt', $payment) }}" class="btn btn-sm btn-light-brand">
+                                                        <i class="feather-printer"></i> Receipt
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
                             </div>
-                            <div class="col-md-6 mb-2">
-                                <div class="text-muted fs-12 mb-1">Outstanding Balance</div>
-                                <div class="fw-medium">Will be available after the Payments module</div>
-                            </div>
-                        </div>
+                        @else
+                            <p class="text-muted mb-0">No payments recorded yet.</p>
+                        @endif
                     </div>
                 </div>
             </div>

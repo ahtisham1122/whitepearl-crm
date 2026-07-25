@@ -19,6 +19,9 @@
         'Paid' => 'bg-success',
         'Overdue' => 'bg-danger',
     ];
+
+    $remainingForBooking = $booking->installmentPlan?->installments
+        ->sum(fn ($installment) => max($installment->amount + $installment->late_fee - $installment->paid_amount, 0));
 @endphp
 
 @section('content')
@@ -73,10 +76,59 @@
                             <div class="col-md-6 mb-2"><strong>Discount:</strong> Rs. {{ number_format($booking->discount, 2) }}</div>
                             <div class="col-md-6 mb-2"><strong>Final Price:</strong> Rs. {{ number_format($booking->final_price, 2) }}</div>
                             <div class="col-md-6 mb-2"><strong>Booking Amount (down payment):</strong> Rs. {{ number_format($booking->booking_amount, 2) }}</div>
+                            @if ($booking->installmentPlan)
+                                <div class="col-md-6 mb-2"><strong>Remaining Balance:</strong> Rs. {{ number_format($remainingForBooking ?? 0, 2) }}</div>
+                            @endif
                             @if ($booking->remarks)
                                 <div class="col-12 mb-2"><strong>Remarks:</strong> {{ $booking->remarks }}</div>
                             @endif
                         </div>
+                    </div>
+                </div>
+
+                <div class="card stretch stretch-full mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0">Payments</h6>
+                            @if ($booking->installmentPlan && $booking->status === 'Active')
+                                <a href="{{ route('payments.create', ['booking_id' => $booking->id]) }}" class="btn btn-sm btn-primary">
+                                    <i class="feather-plus"></i> Receive Payment
+                                </a>
+                            @endif
+                        </div>
+
+                        @if ($booking->payments->isNotEmpty())
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Receipt #</th>
+                                            <th>Date</th>
+                                            <th>Amount</th>
+                                            <th>Method</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($booking->payments as $payment)
+                                            <tr>
+                                                <td>{{ $payment->receipt_number }}</td>
+                                                <td>{{ $payment->payment_date->format('d M Y') }}</td>
+                                                <td>{{ number_format($payment->amount, 2) }}</td>
+                                                <td>{{ $payment->payment_method }}</td>
+                                                <td class="text-end">
+                                                    <a href="{{ route('payments.receipt', $payment) }}" class="btn btn-sm btn-light-brand">
+                                                        <i class="feather-printer"></i> Receipt
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                            <p class="text-muted mb-0">No payments recorded yet.</p>
+                        @endif
                     </div>
                 </div>
 

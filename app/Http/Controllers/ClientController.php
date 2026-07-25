@@ -7,14 +7,17 @@ use App\Http\Requests\UpdateClientRequest;
 use App\Models\Client;
 use App\Models\ClientDocument;
 use App\Services\ClientService;
+use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ClientController extends Controller
 {
-    public function __construct(private readonly ClientService $clientService)
-    {
+    public function __construct(
+        private readonly ClientService $clientService,
+        private readonly PaymentService $paymentService,
+    ) {
     }
 
     /**
@@ -71,7 +74,10 @@ class ClientController extends Controller
             $query->where('status', 'Active')->with(['plot.block', 'installmentPlan.installments']);
         }]);
 
-        return view('clients.show', compact('client'));
+        $payments = $client->payments()->with('booking.plot.block')->latest('payment_date')->get();
+        $outstandingBalance = $this->paymentService->outstandingBalanceForClient($client);
+
+        return view('clients.show', compact('client', 'payments', 'outstandingBalance'));
     }
 
     /**

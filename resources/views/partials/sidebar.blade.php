@@ -50,6 +50,12 @@
                         <span class="nxl-mtext">Installment Plans</span>
                     </a>
                 </li>
+                <li class="nxl-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
+                    <a href="{{ route('payments.index') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-dollar-sign"></i></span>
+                        <span class="nxl-mtext">Payments</span>
+                    </a>
+                </li>
             </ul>
         </div>
     </div>
