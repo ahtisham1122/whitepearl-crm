@@ -20,6 +20,12 @@
                         <span class="nxl-mtext">Dashboard</span>
                     </a>
                 </li>
+                <li class="nxl-item {{ request()->routeIs('notifications.*') ? 'active' : '' }}">
+                    <a href="{{ route('notifications.index') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-bell"></i></span>
+                        <span class="nxl-mtext">Notifications</span>
+                    </a>
+                </li>
                 <li class="nxl-item {{ request()->routeIs('blocks.*') ? 'active' : '' }}">
                     <a href="{{ route('blocks.index') }}" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-grid"></i></span>

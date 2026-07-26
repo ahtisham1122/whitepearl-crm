@@ -60,15 +60,39 @@
                 <div class="dropdown nxl-h-item">
                     <a class="nxl-head-link me-3" data-bs-toggle="dropdown" href="javascript:void(0);" role="button" data-bs-auto-close="outside">
                         <i class="feather-bell"></i>
+                        @if ($notificationCount > 0)
+                            <span class="nxl-h-badge badge bg-danger rounded-pill">
+                                {{ $notificationCount > 9 ? '9+' : $notificationCount }}
+                            </span>
+                        @endif
                     </a>
                     <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-notifications-menu">
                         <div class="d-flex justify-content-between align-items-center notifications-head">
                             <h6 class="fw-bold text-dark mb-0">Notifications</h6>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center flex-column py-5">
-                            <i class="feather-bell fs-1 mb-4"></i>
-                            <p class="text-muted mb-0">No notifications yet</p>
-                        </div>
+                        @if ($notificationAlerts->isNotEmpty())
+                            <div style="max-height: 320px; overflow-y: auto;">
+                                @foreach ($notificationAlerts as $alert)
+                                    <a href="{{ $alert['url'] }}" class="dropdown-item border-bottom py-2 white-space-normal">
+                                        <div class="d-flex align-items-start gap-2">
+                                            <i class="{{ $alert['icon'] }} text-{{ $alert['color'] }} mt-1"></i>
+                                            <div>
+                                                <p class="mb-0 fw-medium fs-13">{{ $alert['type'] }}: {{ $alert['title'] }}</p>
+                                                <p class="mb-0 text-muted fs-12">{{ $alert['message'] }}</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                @endforeach
+                            </div>
+                            <div class="text-center py-2 border-top">
+                                <a href="{{ route('notifications.index') }}" class="fw-medium">View All Notifications</a>
+                            </div>
+                        @else
+                            <div class="d-flex justify-content-between align-items-center flex-column py-5">
+                                <i class="feather-bell fs-1 mb-4"></i>
+                                <p class="text-muted mb-0">No notifications yet</p>
+                            </div>
+                        @endif
                     </div>
                 </div>
                 <div class="dropdown nxl-h-item">
