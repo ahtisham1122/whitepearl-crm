@@ -7,6 +7,7 @@ use App\Models\ClientDocument;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ClientService
 {
@@ -25,10 +26,13 @@ class ClientService
     }
 
     /**
-     * Create a client together with its nominee and any uploaded documents.
+     * Create a client together with its nominee, any uploaded documents,
+     * and a Client Portal login (every new client gets one automatically).
      * Everything happens in one transaction: if any part fails, nothing is saved.
+     *
+     * @return array{client: Client, generated_password: string}
      */
-    public function createClient(array $data): Client
+    public function createClient(array $data): array
     {
         return DB::transaction(function () use ($data) {
             $clientData = $data['client'];
@@ -43,7 +47,9 @@ class ClientService
             $this->saveNominee($client, $data['nominee']);
             $this->saveDocuments($client, $data['document_types'], $data['document_files']);
 
-            return $client;
+            $generatedPassword = $this->generatePassword($client);
+
+            return ['client' => $client, 'generated_password' => $generatedPassword];
         });
     }
 
@@ -70,6 +76,28 @@ class ClientService
 
             return $client;
         });
+    }
+
+    /**
+     * Generate a brand new, strong Client Portal password for this client,
+     * save it (hashed, via the model's 'hashed' cast), and hand back the
+     * one-time plain-text copy so the admin can show/share it. Nothing else
+     * ever stores or logs the plain text -- once this method returns, only
+     * the hash remains in the database.
+     *
+     * Used both for a client's very first login (called from createClient
+     * above) and for resetting an existing client's password -- it's the
+     * same operation either way: whatever password was there before stops
+     * working, and this new one is the only way in from now on.
+     */
+    public function generatePassword(Client $client): string
+    {
+        $plainPassword = Str::password(12);
+
+        $client->password = $plainPassword;
+        $client->save();
+
+        return $plainPassword;
     }
 
     /**

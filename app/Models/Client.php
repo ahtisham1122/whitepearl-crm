@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Auth\Authenticatable;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -10,12 +12,24 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
-class Client extends Model
+/**
+ * A Client is both a business record (a person who bought a plot) AND,
+ * separately, a login for the Client Portal. Implementing Authenticatable
+ * here (the same interface App\Models\User implements for staff) lets a
+ * Client log in through its own "client" guard -- completely separate from
+ * staff logins -- without needing a second table. See config/auth.php for
+ * the guard/provider wiring.
+ */
+class Client extends Model implements AuthenticatableContract
 {
-    use LogsActivity, SoftDeletes;
+    use Authenticatable, LogsActivity, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
+     *
+     * 'password' is deliberately NOT listed here. It can only ever be set
+     * by ClientService::generatePassword() (a direct property assignment,
+     * not mass assignment) -- never through the client add/edit form.
      *
      * @var list<string>
      */
@@ -38,6 +52,16 @@ class Client extends Model
     ];
 
     /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -46,6 +70,7 @@ class Client extends Model
     {
         return [
             'date_of_birth' => 'date',
+            'password' => 'hashed',
         ];
     }
 

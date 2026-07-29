@@ -40,6 +40,17 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // Separate from 'web' on purpose: staff (User) and clients (Client)
+        // are different kinds of accounts with different permissions, so
+        // they get their own guard, own session, and own login page. A
+        // client session here never satisfies 'auth' (web) middleware on
+        // admin routes, and a staff 'web' session never satisfies
+        // 'auth:client' on portal routes.
+        'client' => [
+            'driver' => 'session',
+            'provider' => 'clients',
+        ],
     ],
 
     /*
@@ -69,6 +80,11 @@ return [
         //     'driver' => 'database',
         //     'table' => 'users',
         // ],
+
+        'clients' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Client::class,
+        ],
     ],
 
     /*

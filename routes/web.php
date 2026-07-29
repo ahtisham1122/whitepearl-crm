@@ -28,3 +28,4 @@ require __DIR__.'/reports.php';
 require __DIR__.'/activity-logs.php';
 require __DIR__.'/settings.php';
 require __DIR__.'/notifications.php';
+require __DIR__.'/client-portal.php';

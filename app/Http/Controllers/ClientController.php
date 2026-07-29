@@ -58,11 +58,13 @@ class ClientController extends Controller
      */
     public function store(StoreClientRequest $request): RedirectResponse
     {
-        $this->clientService->createClient($this->extractData($request));
+        ['client' => $client, 'generated_password' => $generatedPassword] =
+            $this->clientService->createClient($this->extractData($request));
 
         return redirect()
-            ->route('clients.index')
-            ->with('success', 'Client added successfully.');
+            ->route('clients.show', $client)
+            ->with('success', 'Client added successfully. Their Client Portal login is ready below -- write it down now, it will not be shown again.')
+            ->with('generated_password', $generatedPassword);
     }
 
     /**
@@ -112,6 +114,22 @@ class ClientController extends Controller
         return redirect()
             ->route('clients.index')
             ->with('success', 'Client deleted successfully.');
+    }
+
+    /**
+     * Generate (or reset) this client's Client Portal login password.
+     * The new password is shown once, on the redirect back to the client's
+     * page -- it is never stored in plain text and never shown again after
+     * this request.
+     */
+    public function generateLogin(Client $client): RedirectResponse
+    {
+        $generatedPassword = $this->clientService->generatePassword($client);
+
+        return redirect()
+            ->route('clients.show', $client)
+            ->with('success', 'Client Portal login ready -- write down the password below now, it will not be shown again.')
+            ->with('generated_password', $generatedPassword);
     }
 
     /**

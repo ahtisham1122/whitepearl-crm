@@ -50,9 +50,35 @@
     </div>
 
     <div class="main-content">
+        @if (session('generated_password'))
+            <div class="alert alert-warning">
+                <h6 class="fw-bold mb-2"><i class="feather-key me-2"></i>Client Portal Login -- Save This Now</h6>
+                <p class="mb-2">Share these with the client. <strong>The password will not be shown again</strong> after you leave this page.</p>
+                <div class="row g-2 align-items-center">
+                    <div class="col-auto"><strong>CNIC (username):</strong></div>
+                    <div class="col-auto"><code>{{ $client->cnic }}</code></div>
+                </div>
+                <div class="row g-2 align-items-center mt-1">
+                    <div class="col-auto"><strong>Password:</strong></div>
+                    <div class="col-auto">
+                        <code id="generated_password_text">{{ session('generated_password') }}</code>
+                    </div>
+                    <div class="col-auto">
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-dark"
+                            onclick="navigator.clipboard.writeText(document.getElementById('generated_password_text').textContent)"
+                        >
+                            <i class="feather-copy"></i> Copy
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="row">
             <div class="col-lg-4">
-                <div class="card stretch stretch-full">
+                <div class="card stretch stretch-full mb-4">
                     <div class="card-body text-center">
                         @if ($client->profile_photo)
                             <img
@@ -74,6 +100,24 @@
                         <span class="badge {{ $statusBadgeClass[$client->status] ?? 'bg-secondary' }}">
                             {{ $client->status }}
                         </span>
+                    </div>
+                </div>
+
+                <div class="card stretch stretch-full mb-4">
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-3">Client Portal Login</h6>
+                        @if ($client->password)
+                            <p class="text-success mb-3"><i class="feather-check-circle me-1"></i>This client has portal access.</p>
+                        @else
+                            <p class="text-muted mb-3"><i class="feather-x-circle me-1"></i>No portal login yet.</p>
+                        @endif
+
+                        <form method="POST" action="{{ route('clients.generate-login', $client) }}" onsubmit="return confirm('{{ $client->password ? 'This resets their password -- the old one stops working immediately. Continue?' : 'Create a Client Portal login for this client?' }}');">
+                            @csrf
+                            <button type="submit" class="btn btn-sm {{ $client->password ? 'btn-outline-warning' : 'btn-primary' }} w-100">
+                                {{ $client->password ? 'Reset Password' : 'Generate Login' }}
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
