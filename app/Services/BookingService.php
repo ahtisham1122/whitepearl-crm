@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Booking;
 use App\Models\Plot;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class BookingService
 {
@@ -25,11 +26,24 @@ class BookingService
     /**
      * Create a booking and move the plot out of the Available pool.
      * Both changes happen in one transaction: if either fails, neither is saved.
+     *
+     * lockForUpdate() "reserves" the plot row the moment we read it, inside
+     * this transaction -- any other request trying to read that same row
+     * with lockForUpdate() has to wait until this transaction finishes. That
+     * closes the gap between "check the plot is Available" and "save the
+     * booking": two people can no longer both pass the check at the same
+     * instant and both book the same plot.
      */
     public function createBooking(array $data): Booking
     {
         return DB::transaction(function () use ($data) {
-            $plot = Plot::findOrFail($data['plot_id']);
+            $plot = Plot::lockForUpdate()->findOrFail($data['plot_id']);
+
+            if ($plot->status !== 'Available') {
+                throw ValidationException::withMessages([
+                    'plot_id' => 'This plot was just booked by someone else. Please choose another plot.',
+                ]);
+            }
 
             $totalPrice = $data['total_price'];
             $discount = $data['discount'] ?? 0;

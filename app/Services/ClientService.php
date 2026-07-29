@@ -73,21 +73,13 @@ class ClientService
     }
 
     /**
-     * Delete a client, its uploaded files, and its related rows.
-     * The nominee and document rows are removed automatically by the
-     * database (cascadeOnDelete in their migrations) -- we only need to
-     * remove the physical files ourselves before the rows disappear.
+     * "Delete" a client. Client now uses soft deletes, so this only hides
+     * the record (sets deleted_at) -- the row, its profile photo, and its
+     * documents all stay in place in case the deletion needs to be undone.
+     * Nothing is permanently erased here.
      */
     public function deleteClient(Client $client): void
     {
-        if ($client->profile_photo) {
-            Storage::disk('public')->delete($client->profile_photo);
-        }
-
-        foreach ($client->documents as $document) {
-            Storage::disk('public')->delete($document->file_path);
-        }
-
         $client->delete();
     }
 

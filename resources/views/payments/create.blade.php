@@ -298,7 +298,7 @@
                                     </div>
 
                                     <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-primary">Record Payment</button>
+                                        <button type="submit" id="record_payment_btn" class="btn btn-primary">Record Payment</button>
                                         <a href="{{ route('payments.index') }}" class="btn btn-light">Cancel</a>
                                     </div>
                                 </form>
@@ -342,6 +342,18 @@
 
             modeSpecific.addEventListener('change', toggleModeFields);
             modeAuto.addEventListener('change', toggleModeFields);
+
+            // Stop a double-click (or an impatient second click) from firing
+            // the payment form twice -- the button is disabled the instant
+            // it's clicked, so only the first click can ever submit.
+            const paymentForm = document.getElementById('record_payment_btn')?.closest('form');
+            if (paymentForm) {
+                paymentForm.addEventListener('submit', function () {
+                    const submitBtn = document.getElementById('record_payment_btn');
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Recording...';
+                });
+            }
 
             installmentSelect.addEventListener('change', function () {
                 const selectedOption = installmentSelect.options[installmentSelect.selectedIndex];

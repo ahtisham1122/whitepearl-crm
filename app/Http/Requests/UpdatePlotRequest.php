@@ -40,7 +40,12 @@ class UpdatePlotRequest extends FormRequest
             'plot_price' => ['required', 'numeric', 'min:0'],
             'development_charges' => ['nullable', 'numeric', 'min:0'],
             'extra_charges' => ['nullable', 'numeric', 'min:0'],
-            'status' => ['required', Rule::in(['Available', 'Reserved', 'Sold', 'Cancelled'])],
+            // Reserved and Sold can't be picked by hand -- only Available
+            // and Cancelled are ever submitted from the form. When a plot
+            // is currently Reserved/Sold, the form doesn't send a status
+            // field at all ('sometimes' means it's simply skipped, and the
+            // plot keeps whatever status the booking process gave it).
+            'status' => ['sometimes', 'required', Rule::in(['Available', 'Cancelled'])],
         ];
     }
 }

@@ -38,7 +38,11 @@ class StorePlotRequest extends FormRequest
             'plot_price' => ['required', 'numeric', 'min:0'],
             'development_charges' => ['nullable', 'numeric', 'min:0'],
             'extra_charges' => ['nullable', 'numeric', 'min:0'],
-            'status' => ['required', Rule::in(['Available', 'Reserved', 'Sold', 'Cancelled'])],
+            // Reserved and Sold are never chosen by hand -- a brand new
+            // plot has no booking yet, so only Available/Cancelled make
+            // sense here. The booking process is what moves a plot to
+            // Reserved or Sold later.
+            'status' => ['required', Rule::in(['Available', 'Cancelled'])],
         ];
     }
 }

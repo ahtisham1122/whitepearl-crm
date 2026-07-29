@@ -7,9 +7,18 @@ use App\Models\Client;
 use App\Models\Installment;
 use App\Models\Payment;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class PaymentService
 {
+    /**
+     * How many seconds count as "just submitted" for the duplicate-payment
+     * check below. Long enough to catch a double-click or a page refresh,
+     * short enough that a genuine second payment made a bit later for the
+     * same amount is never blocked.
+     */
+    private const DUPLICATE_WINDOW_SECONDS = 10;
+
     /**
      * Build the next receipt code, e.g. RCP-0001, RCP-0002.
      */
@@ -38,6 +47,8 @@ class PaymentService
             $booking = Booking::findOrFail($data['booking_id']);
             $lateFee = (float) ($data['late_fee'] ?? 0);
 
+            $this->guardAgainstDuplicate($booking->id, (float) $data['amount'], $data['payment_method']);
+
             $payment = Payment::create([
                 'receipt_number' => $this->generateReceiptNumber(),
                 'booking_id' => $booking->id,
@@ -63,6 +74,28 @@ class PaymentService
 
             return $payment;
         });
+    }
+
+    /**
+     * Stop the exact same payment from being saved twice in a row -- e.g. a
+     * double-click on "Record Payment," or a browser retry after a slow
+     * response. If a payment for this booking, with this same amount and
+     * payment method, was created moments ago, we treat the new submission
+     * as a duplicate and refuse it instead of recording the money twice.
+     */
+    private function guardAgainstDuplicate(int $bookingId, float $amount, string $paymentMethod): void
+    {
+        $isDuplicate = Payment::where('booking_id', $bookingId)
+            ->where('amount', $amount)
+            ->where('payment_method', $paymentMethod)
+            ->where('created_at', '>=', now()->subSeconds(self::DUPLICATE_WINDOW_SECONDS))
+            ->exists();
+
+        if ($isDuplicate) {
+            throw ValidationException::withMessages([
+                'amount' => 'This looks like a duplicate: an identical payment for this booking was just recorded a few seconds ago. Please check the payment list before submitting again.',
+            ]);
+        }
     }
 
     /**

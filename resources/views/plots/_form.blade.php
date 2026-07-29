@@ -82,22 +82,34 @@
             @enderror
         </div>
 
+        @php
+            // Reserved/Sold means a real booking is behind this plot -- that
+            // can only change by creating/cancelling/deleting the booking,
+            // never by hand here, so the field is shown read-only instead
+            // of a dropdown.
+            $statusLocked = $plot->exists && in_array($plot->status, ['Reserved', 'Sold']);
+        @endphp
         <div class="col-md-6 mb-3">
             <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
-            <select
-                name="status"
-                id="status"
-                class="form-control @error('status') is-invalid @enderror"
-            >
-                @foreach (['Available', 'Reserved', 'Sold', 'Cancelled'] as $statusOption)
-                    <option value="{{ $statusOption }}" @selected(old('status', $plot->status ?? 'Available') === $statusOption)>
-                        {{ $statusOption }}
-                    </option>
-                @endforeach
-            </select>
-            @error('status')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
+            @if ($statusLocked)
+                <input type="text" class="form-control" value="{{ $plot->status }}" disabled />
+                <small class="text-muted">Set automatically by the booking system. Cancel or delete the booking to free this plot.</small>
+            @else
+                <select
+                    name="status"
+                    id="status"
+                    class="form-control @error('status') is-invalid @enderror"
+                >
+                    @foreach (['Available', 'Cancelled'] as $statusOption)
+                        <option value="{{ $statusOption }}" @selected(old('status', $plot->status ?? 'Available') === $statusOption)>
+                            {{ $statusOption }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('status')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            @endif
         </div>
 
         <div class="col-12 mb-3">
