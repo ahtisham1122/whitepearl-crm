@@ -83,24 +83,25 @@
         </div>
 
         @php
-            // Reserved/Sold means a real booking is behind this plot -- that
-            // can only change by creating/cancelling/deleting the booking,
-            // never by hand here, so the field is shown read-only instead
-            // of a dropdown.
-            $statusLocked = $plot->exists && in_array($plot->status, ['Reserved', 'Sold']);
+            // Anything outside Available/Cancelled reflects a real booking
+            // or a real legacy import record -- that can only change by
+            // creating/cancelling/deleting the booking, or by re-running an
+            // import, never by hand here, so the field is shown read-only
+            // instead of a dropdown.
+            $statusLocked = $plot->exists && ! in_array($plot->status, \App\Models\Plot::MANUAL_STATUSES);
         @endphp
         <div class="col-md-6 mb-3">
             <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
             @if ($statusLocked)
                 <input type="text" class="form-control" value="{{ $plot->status }}" disabled />
-                <small class="text-muted">Set automatically by the booking system. Cancel or delete the booking to free this plot.</small>
+                <small class="text-muted">Set automatically by the booking system (or a data import). Cancel or delete the booking to free this plot.</small>
             @else
                 <select
                     name="status"
                     id="status"
                     class="form-control @error('status') is-invalid @enderror"
                 >
-                    @foreach (['Available', 'Cancelled'] as $statusOption)
+                    @foreach (\App\Models\Plot::MANUAL_STATUSES as $statusOption)
                         <option value="{{ $statusOption }}" @selected(old('status', $plot->status ?? 'Available') === $statusOption)>
                             {{ $statusOption }}
                         </option>

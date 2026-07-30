@@ -53,12 +53,9 @@ class DashboardService
             ->groupBy('status')
             ->pluck('total', 'status');
 
-        return [
-            'Available' => (int) ($counts['Available'] ?? 0),
-            'Reserved' => (int) ($counts['Reserved'] ?? 0),
-            'Sold' => (int) ($counts['Sold'] ?? 0),
-            'Cancelled' => (int) ($counts['Cancelled'] ?? 0),
-        ];
+        return collect(Plot::STATUSES)
+            ->mapWithKeys(fn (string $status) => [$status => (int) ($counts[$status] ?? 0)])
+            ->all();
     }
 
     private function getRevenueStats(): array

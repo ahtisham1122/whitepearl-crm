@@ -14,6 +14,37 @@ class Plot extends Model
     use LogsActivity;
 
     /**
+     * Every status a plot can carry. The first four are the normal live
+     * statuses the booking workflow moves a plot through (see
+     * MANUAL_STATUSES below for which of these an admin can type directly).
+     * The last four exist only for legacy/imported data (see
+     * php artisan import:blocka) -- a plot whose deal was already resolved,
+     * one way or another, before it ever entered this system.
+     *
+     * @var list<string>
+     */
+    public const STATUSES = [
+        'Available',
+        'Reserved',
+        'Sold',
+        'Cancelled',
+        'Fully Paid',
+        'Surrendered',
+        'WPC Property',
+        'Disputed',
+    ];
+
+    /**
+     * The only statuses an admin may set by hand on the plot add/edit form.
+     * Every other status reflects a real booking or a real historical
+     * import record, so it can only change through that process (create/
+     * cancel/delete a booking, or run an import) -- never by typing over it.
+     *
+     * @var list<string>
+     */
+    public const MANUAL_STATUSES = ['Available', 'Cancelled'];
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -32,6 +63,7 @@ class Plot extends Model
         'extra_charges',
         'total_price',
         'status',
+        'remarks',
     ];
 
     /**

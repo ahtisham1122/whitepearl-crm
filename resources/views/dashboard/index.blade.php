@@ -9,6 +9,10 @@
         ['label' => 'Reserved', 'value' => number_format($plotStatusCounts['Reserved']), 'icon' => 'feather-clock', 'color' => 'warning'],
         ['label' => 'Sold', 'value' => number_format($plotStatusCounts['Sold']), 'icon' => 'feather-check-square', 'color' => 'danger'],
         ['label' => 'Cancelled', 'value' => number_format($plotStatusCounts['Cancelled']), 'icon' => 'feather-x-circle', 'color' => 'secondary'],
+        ['label' => 'Fully Paid', 'value' => number_format($plotStatusCounts['Fully Paid']), 'icon' => 'feather-check-square', 'color' => 'primary'],
+        ['label' => 'Surrendered', 'value' => number_format($plotStatusCounts['Surrendered']), 'icon' => 'feather-corner-down-left', 'color' => 'dark'],
+        ['label' => 'WPC Property', 'value' => number_format($plotStatusCounts['WPC Property']), 'icon' => 'feather-home', 'color' => 'info'],
+        ['label' => 'Disputed', 'value' => number_format($plotStatusCounts['Disputed']), 'icon' => 'feather-alert-triangle', 'color' => 'darken'],
     ];
 
     $businessStats = [
@@ -304,9 +308,13 @@
                     plotStatusCounts.Reserved,
                     plotStatusCounts.Sold,
                     plotStatusCounts.Cancelled,
+                    plotStatusCounts['Fully Paid'],
+                    plotStatusCounts.Surrendered,
+                    plotStatusCounts['WPC Property'],
+                    plotStatusCounts.Disputed,
                 ],
-                labels: ['Available', 'Reserved', 'Sold', 'Cancelled'],
-                colors: ['#0ca30c', '#fab219', '#d03b3b', '#898781'],
+                labels: ['Available', 'Reserved', 'Sold', 'Cancelled', 'Fully Paid', 'Surrendered', 'WPC Property', 'Disputed'],
+                colors: ['#0ca30c', '#fab219', '#d03b3b', '#898781', '#2a78d6', '#3b3b3b', '#17a2b8', '#fd7e14'],
                 legend: { position: 'bottom' },
                 dataLabels: { enabled: true, formatter: function (val) { return val.toFixed(1) + '%'; } },
             }).render();

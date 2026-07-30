@@ -28,6 +28,7 @@ class Payment extends Model
         'late_fee',
         'reference_no',
         'remarks',
+        'is_legacy',
     ];
 
     /**
@@ -41,6 +42,7 @@ class Payment extends Model
             'payment_date' => 'date',
             'amount' => 'decimal:2',
             'late_fee' => 'decimal:2',
+            'is_legacy' => 'boolean',
         ];
     }
 

@@ -8,6 +8,10 @@
         'Reserved' => 'bg-warning',
         'Sold' => 'bg-danger',
         'Cancelled' => 'bg-secondary',
+        'Fully Paid' => 'bg-primary',
+        'Surrendered' => 'bg-dark',
+        'WPC Property' => 'bg-info',
+        'Disputed' => 'bg-orange',
     ];
 @endphp
 
@@ -57,7 +61,7 @@
                             <div class="col-md-3">
                                 <select name="status" class="form-control">
                                     <option value="">All Statuses</option>
-                                    @foreach (['Available', 'Reserved', 'Sold', 'Cancelled'] as $statusOption)
+                                    @foreach (\App\Models\Plot::STATUSES as $statusOption)
                                         <option value="{{ $statusOption }}" @selected(request('status') === $statusOption)>
                                             {{ $statusOption }}
                                         </option>

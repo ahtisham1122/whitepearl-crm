@@ -8,6 +8,10 @@
         'Reserved' => 'bg-warning',
         'Sold' => 'bg-danger',
         'Cancelled' => 'bg-secondary',
+        'Fully Paid' => 'bg-primary',
+        'Surrendered' => 'bg-dark',
+        'WPC Property' => 'bg-info',
+        'Disputed' => 'bg-orange',
     ];
 @endphp
 
@@ -49,6 +53,9 @@
                             <div class="col-md-4 mb-2"><strong>Corner Plot:</strong> {{ $plot->corner_plot ? 'Yes' : 'No' }}</div>
                             <div class="col-md-4 mb-2"><strong>Park Facing:</strong> {{ $plot->park_facing ? 'Yes' : 'No' }}</div>
                             <div class="col-md-4 mb-2"><strong>Main Boulevard:</strong> {{ $plot->main_boulevard ? 'Yes' : 'No' }}</div>
+                            @if ($plot->remarks)
+                                <div class="col-12 mb-2"><strong>Remarks:</strong> {{ $plot->remarks }}</div>
+                            @endif
                         </div>
                     </div>
                 </div>

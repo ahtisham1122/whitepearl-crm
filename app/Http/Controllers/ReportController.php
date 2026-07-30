@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exports\GenericReportExport;
+use App\Models\Plot;
 use App\Services\ReportService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -47,7 +48,7 @@ class ReportController extends Controller
             $this->reportService->plotsReport($request->string('status')->toString() ?: null),
             'reports.plots',
             'status',
-            ['All', 'Available', 'Reserved', 'Sold', 'Cancelled']
+            ['All', ...Plot::STATUSES]
         );
     }
 

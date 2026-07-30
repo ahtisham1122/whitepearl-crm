@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Plot;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -40,12 +41,12 @@ class UpdatePlotRequest extends FormRequest
             'plot_price' => ['required', 'numeric', 'min:0'],
             'development_charges' => ['nullable', 'numeric', 'min:0'],
             'extra_charges' => ['nullable', 'numeric', 'min:0'],
-            // Reserved and Sold can't be picked by hand -- only Available
-            // and Cancelled are ever submitted from the form. When a plot
-            // is currently Reserved/Sold, the form doesn't send a status
-            // field at all ('sometimes' means it's simply skipped, and the
-            // plot keeps whatever status the booking process gave it).
-            'status' => ['sometimes', 'required', Rule::in(['Available', 'Cancelled'])],
+            // Only the manually-settable statuses are ever submitted from
+            // the form. When a plot is currently locked (see Plot::MANUAL_STATUSES),
+            // the form doesn't send a status field at all ('sometimes' means
+            // it's simply skipped, and the plot keeps whatever status the
+            // booking process or an import gave it).
+            'status' => ['sometimes', 'required', Rule::in(Plot::MANUAL_STATUSES)],
         ];
     }
 }

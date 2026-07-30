@@ -62,7 +62,7 @@ class ReportService
 
     public function plotsReport(?string $status): array
     {
-        $status = in_array($status, ['Available', 'Reserved', 'Sold', 'Cancelled'], true) ? $status : null;
+        $status = in_array($status, Plot::STATUSES, true) ? $status : null;
 
         $plots = Plot::with(['block', 'activeBooking.client'])
             ->when($status, fn ($query) => $query->where('status', $status))
