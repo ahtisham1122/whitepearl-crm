@@ -45,7 +45,20 @@
       "Bash(netstat -ano)",
       "Bash(sc query *)",
       "Bash(powershell -Command \"Get-CimInstance Win32_Process -Filter \\\\\"CommandLine LIKE '%artisan serve%'\\\\\" | Select-Object ProcessId,CommandLine\" 2>&1)",
-      "Bash(powershell -Command \"Stop-Process -Id 7540 -Force; Start-Sleep -Seconds 1; Get-CimInstance Win32_Process -Filter \\\\\"CommandLine LIKE '%artisan serve%'\\\\\" | Select-Object ProcessId,CommandLine\" 2>&1)"
+      "Bash(powershell -Command \"Stop-Process -Id 7540 -Force; Start-Sleep -Seconds 1; Get-CimInstance Win32_Process -Filter \\\\\"CommandLine LIKE '%artisan serve%'\\\\\" | Select-Object ProcessId,CommandLine\" 2>&1)",
+      "Bash(powershell -Command \"Add-Type -AssemblyName System.Drawing; \\\\$img = [System.Drawing.Image]::FromFile\\('C:\\\\Users\\\\sunrise\\\\Desktop\\\\logo.png'\\); Write-Output \\(\\\\\"{0}x{1}\\\\\" -f \\\\$img.Width, \\\\$img.Height\\); \\\\$img.Dispose\\(\\)\")",
+      "Bash(where magick *)",
+      "Bash(where convert *)",
+      "Bash(powershell -Command \"Add-Type -AssemblyName System.Drawing; \\\\$img = [System.Drawing.Image]::FromFile\\('C:\\\\laragon\\\\www\\\\whitepearl-crm\\\\public\\\\assets\\\\images\\\\logo-full.png'\\); Write-Output \\(\\\\\"logo-full: {0}x{1}\\\\\" -f \\\\$img.Width, \\\\$img.Height\\); \\\\$img.Dispose\\(\\); \\\\$img2 = [System.Drawing.Image]::FromFile\\('C:\\\\laragon\\\\www\\\\whitepearl-crm\\\\public\\\\assets\\\\images\\\\logo-abbr.png'\\); Write-Output \\(\\\\\"logo-abbr: {0}x{1}\\\\\" -f \\\\$img2.Width, \\\\$img2.Height\\); \\\\$img2.Dispose\\(\\)\")",
+      "Bash(curl -s -o /dev/null -w \"login page: %{http_code}\\\\n\" http://127.0.0.1:8001/login)",
+      "Bash(curl -s -o /dev/null -w \"logo.png direct: %{http_code}  content-type: %{content_type}\\\\n\" http://127.0.0.1:8001/images/logo.png)",
+      "Bash(curl -s http://127.0.0.1:8001/login)",
+      "Bash(powershell -Command \"Get-CimInstance Win32_Process -Filter \\\\\"CommandLine LIKE '%8001%'\\\\\" | Select-Object ProcessId,CommandLine\" 2>&1)",
+      "Bash(powershell -Command \"Stop-Process -Id 4072,4244,7680 -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1; Get-CimInstance Win32_Process -Filter \\\\\"CommandLine LIKE '%8001%'\\\\\" | Select-Object ProcessId,CommandLine\" 2>&1)",
+      "Bash(powershell -Command 'Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\('\\\\''C:\\\\laragon\\\\www\\\\whitepearl-crm\\\\public\\\\images\\\\logo.png'\\\\''\\); Write-Output \\(\"New logo.png: {0}x{1}\" -f $img.Width, $img.Height\\); $img.Dispose\\(\\)')",
+      "Bash(git restore *)",
+      "Bash(powershell -Command \"Get-CimInstance Win32_Process -Filter \\\\\"CommandLine LIKE '%8002%'\\\\\" | Select-Object ProcessId,CommandLine\" 2>&1)",
+      "Bash(powershell -Command \"Stop-Process -Id 15996,15436,20400 -Force -ErrorAction SilentlyContinue\")"
     ]
   }
 }

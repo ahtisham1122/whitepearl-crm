@@ -33,8 +33,13 @@
         <div class="auth-cover-sidebar-inner">
             <div class="auth-cover-card-wrapper">
                 <div class="auth-cover-card p-sm-5">
-                    <div class="wd-50 mb-5">
-                        <img src="{{ asset('assets/images/logo-abbr.png') }}" alt="{{ config('app.name') }}" class="img-fluid" />
+                    {{-- Dark badge behind the logo -- the logo is gold/white and needs a dark backdrop to read cleanly, matching the sidebar treatment. --}}
+                    <div class="mb-5 d-inline-block" style="background: #000; padding: 20px 32px; border-radius: 10px;">
+                        <img
+                            src="{{ asset('images/logo.png') }}"
+                            alt="White Pearl City Gwadar"
+                            style="height: 92px; width: auto; object-fit: contain;"
+                        />
                     </div>
 
                     @yield('content')

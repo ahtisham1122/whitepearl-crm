@@ -96,7 +96,13 @@ class BookingController extends Controller
      */
     public function destroy(Booking $booking): RedirectResponse
     {
-        $this->bookingService->deleteBooking($booking);
+        try {
+            $this->bookingService->deleteBooking($booking);
+        } catch (\DomainException $e) {
+            return redirect()
+                ->route('bookings.show', $booking)
+                ->with('error', $e->getMessage());
+        }
 
         return redirect()
             ->route('bookings.index')

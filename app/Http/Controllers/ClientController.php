@@ -109,7 +109,13 @@ class ClientController extends Controller
      */
     public function destroy(Client $client): RedirectResponse
     {
-        $this->clientService->deleteClient($client);
+        try {
+            $this->clientService->deleteClient($client);
+        } catch (\DomainException $e) {
+            return redirect()
+                ->route('clients.show', $client)
+                ->with('error', $e->getMessage());
+        }
 
         return redirect()
             ->route('clients.index')

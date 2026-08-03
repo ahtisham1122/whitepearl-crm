@@ -105,9 +105,21 @@ class ClientService
      * the record (sets deleted_at) -- the row, its profile photo, and its
      * documents all stay in place in case the deletion needs to be undone.
      * Nothing is permanently erased here.
+     *
+     * A client with any booking is refused: soft-deleting them would hide
+     * the client record while their booking (and its payments/receipts)
+     * stays fully visible everywhere else, pointing at a client every page
+     * would suddenly find missing -- exactly the crash this guard exists
+     * to prevent.
+     *
+     * @throws \DomainException
      */
     public function deleteClient(Client $client): void
     {
+        if ($client->bookings()->exists()) {
+            throw new \DomainException('This client has booking history and cannot be deleted. Cancel or delete their booking(s) first.');
+        }
+
         $client->delete();
     }
 

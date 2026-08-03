@@ -88,11 +88,22 @@ class BookingService
     }
 
     /**
-     * Permanently delete a booking (e.g. it was entered by mistake).
+     * "Delete" a booking (e.g. it was entered by mistake). Booking now uses
+     * soft deletes, so this only hides the record -- it stays recoverable.
      * If it was still Active, its plot is freed back to Available too.
+     *
+     * A booking with any payment or installment plan is refused: hiding
+     * the booking would leave those rows pointing at a booking every
+     * receipt/report/history page would suddenly find missing.
+     *
+     * @throws \DomainException
      */
     public function deleteBooking(Booking $booking): void
     {
+        if ($booking->payments()->exists() || $booking->installmentPlan()->exists()) {
+            throw new \DomainException('This booking has payments or an installment plan and cannot be deleted. Remove those first.');
+        }
+
         DB::transaction(function () use ($booking) {
             $wasActive = $booking->status === 'Active';
             $plot = $booking->plot;

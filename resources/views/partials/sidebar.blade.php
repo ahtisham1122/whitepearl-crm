@@ -3,10 +3,23 @@
 <!--! ================================================================ !-->
 <nav class="nxl-navigation">
     <div class="navbar-wrapper">
-        <div class="m-header">
+        {{--
+            The White Pearl City logo is gold/white, designed to sit on a
+            dark background -- so this header strip is forced to black
+            here (inline style beats the theme's light/dark-mode CSS either
+            way, so it stays correct no matter which theme the user picks).
+            "filter:none" on the image blocks the theme's dark-mode
+            invert-color effect, which is meant for the old Duralux mark
+            and would otherwise wreck our logo's colors.
+        --}}
+        <div class="m-header" style="background: #000; justify-content: center; padding: 8px 16px;">
             <a href="{{ route('dashboard') }}" class="b-brand">
-                <img src="{{ asset('assets/images/logo-full.png') }}" alt="{{ config('app.name') }}" class="logo logo-lg" />
-                <img src="{{ asset('assets/images/logo-abbr.png') }}" alt="{{ config('app.name') }}" class="logo logo-sm" />
+                <img
+                    src="{{ asset('images/logo.png') }}"
+                    alt="White Pearl City Gwadar"
+                    class="logo logo-lg"
+                    style="height: 60px; width: auto; max-width: 100%; object-fit: contain; filter: none; display: block;"
+                />
             </a>
         </div>
         <div class="navbar-content">
