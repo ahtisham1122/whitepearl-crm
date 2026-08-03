@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ClientStatementExport;
 use App\Exports\GenericReportExport;
 use App\Models\Block;
 use App\Models\Booking;
+use App\Models\Client;
 use App\Models\Plot;
 use App\Services\PaymentService;
 use App\Services\ReportService;
@@ -26,14 +28,20 @@ class ReportController extends Controller
 
     // --- Client reports ---------------------------------------------------
 
+    /**
+     * Rendered through its own view (not the generic showReport() helper)
+     * because each client's name here links to their individual statement --
+     * something the generic table partial, which only ever prints plain
+     * text cells, can't do.
+     */
     public function clients(Request $request): View
     {
-        return $this->showReport(
-            $this->reportService->clientsReport($request->string('status')->toString() ?: null),
-            'reports.clients',
-            'status',
-            ['All', 'Active', 'Inactive']
-        );
+        return view('reports.clients', [
+            ...$this->reportService->clientsReport($request->string('status')->toString() ?: null),
+            'routeBase' => 'reports.clients',
+            'filterType' => 'status',
+            'statusOptions' => ['All', 'Active', 'Inactive'],
+        ]);
     }
 
     public function clientsPrint(Request $request): View
@@ -44,6 +52,55 @@ class ReportController extends Controller
     public function clientsExport(Request $request, string $format): BinaryFileResponse|Response
     {
         return $this->export($this->reportService->clientsReport($request->string('status')->toString() ?: null), $format);
+    }
+
+    /**
+     * Clicking a client on the All Clients report lands here first. Every
+     * booking is considered here, not just Active ones -- a Cancelled
+     * booking (common in the imported Block A data) still has a real plot,
+     * installment plan, and payment history, and an admin can still want
+     * to see or export it. Most clients have exactly one booking, so this
+     * skips straight to their statement; a client with more than one gets
+     * a short pick-a-plot page instead of guessing which one to show (see
+     * reports/client-statement-picker.blade.php).
+     */
+    public function clientStatementPicker(Client $client): RedirectResponse|View
+    {
+        $bookings = $client->bookings()->with('plot.block')->orderByDesc('booking_date')->get();
+
+        if ($bookings->isEmpty()) {
+            return redirect()->route('reports.clients')
+                ->with('error', "{$client->full_name} has no plot or payment history to show a statement for.");
+        }
+
+        if ($bookings->count() === 1) {
+            return redirect()->route('reports.client-statement', $bookings->first());
+        }
+
+        return view('reports.client-statement-picker', ['client' => $client, 'bookings' => $bookings]);
+    }
+
+    public function clientStatement(Booking $booking): View
+    {
+        return view('reports.client-statement', $this->reportService->clientStatement($booking));
+    }
+
+    public function clientStatementPrint(Booking $booking): View
+    {
+        return view('reports.client-statement-print', $this->reportService->clientStatement($booking));
+    }
+
+    public function clientStatementExport(Booking $booking, string $format): BinaryFileResponse|Response
+    {
+        $statement = $this->reportService->clientStatement($booking);
+
+        if ($format === 'excel') {
+            return Excel::download(new ClientStatementExport($statement), $statement['filename'].'.xlsx');
+        }
+
+        $pdf = Pdf::loadView('reports.client-statement-pdf', $statement)->setPaper('a4', 'portrait');
+
+        return $pdf->download($statement['filename'].'.pdf');
     }
 
     // --- Plot reports -------------------------------------------------------

@@ -63,6 +63,10 @@ class ReportService
             'headings' => ['Client ID', 'Name', 'CNIC', 'Phone', 'City', 'Status', 'Owned Plots', 'Outstanding Balance'],
             'rows' => $rows,
             'totalsRow' => null,
+            // Kept alongside 'rows' (not inside it) so the on-screen "All
+            // Clients" page can link each row to that client's statement --
+            // print/PDF/Excel only ever read 'rows', so they're unaffected.
+            'clients' => $clients,
         ];
     }
 
@@ -500,6 +504,83 @@ class ReportService
             'months_overdue' => $monthsOverdue,
             'suggested_fine' => $suggestedFine,
         ];
+    }
+
+    /**
+     * The individual client statement -- one booking's whole installment
+     * schedule as a single printable document, matching the client's old
+     * paper "Sale Installment Schedule" form. Scoped to a booking, not just
+     * a client, because every field here (plot price, advance, the regular
+     * installment amount, the schedule itself) belongs to one specific
+     * plot purchase. A client who owns two plots has two of these, one per
+     * booking -- see ReportController::clientStatementPicker() for how the
+     * right one gets chosen.
+     *
+     * "Plot Price" here is the booking's final_price (after any discount) --
+     * the amount actually agreed with this client -- so Advance + Due +
+     * Received reconciles back to it. Late fees are shown inside "Due
+     * Amount" per installment (they're money genuinely owed) but sit on
+     * top of that reconciliation, not inside it.
+     */
+    public function clientStatement(Booking $booking): array
+    {
+        $booking->loadMissing(['client', 'plot.block', 'installmentPlan.installments']);
+
+        $client = $booking->client;
+        $plot = $booking->plot;
+        $installments = $booking->installmentPlan?->installments ?? collect();
+
+        $totalReceived = (float) $booking->booking_amount + $installments->sum(fn (Installment $i) => (float) $i->paid_amount);
+        $totalDue = $installments->sum(fn (Installment $i) => max($i->amount + $i->late_fee - $i->paid_amount, 0));
+        $installmentAmount = $installments->first()?->amount ?? 0;
+
+        $schedule = $installments->values()->map(fn (Installment $installment, int $index) => [
+            'Sr#' => $index + 1,
+            'Inst#' => $installment->installment_number,
+            'Due Date' => $installment->due_date->format('d M Y'),
+            'Due Amount' => $this->money($installment->amount + $installment->late_fee),
+            'Receive Date' => $installment->paid_date?->format('d M Y') ?? '—',
+            'Receive Amount' => $this->money($installment->paid_amount),
+            'Status' => $installment->status === 'Paid' ? 'Paid' : 'Due',
+        ]);
+
+        return [
+            'title' => 'Sale Installment Schedule',
+            'filename' => 'statement-'.$booking->booking_number,
+            'headings' => ['Sr#', 'Inst#', 'Due Date', 'Due Amount', 'Receive Date', 'Receive Amount', 'Status'],
+            'rows' => $schedule,
+            'totalsRow' => null,
+            'booking' => $booking,
+            'summaryBlock' => [
+                'Owner Name' => $client->full_name,
+                'Status' => $plot->plot_number,
+                'Booking Status' => $booking->status,
+                'Plot Description' => $this->plotDescription($plot),
+                'Plot Price' => $this->money((float) $booking->final_price),
+                'Advance Amount' => $this->money((float) $booking->booking_amount),
+                'Installment Amount' => $this->money((float) $installmentAmount),
+                'Due Amount' => $this->money($totalDue),
+                'Received Amount' => $this->money($totalReceived),
+                'Cancel Amount' => $this->money($booking->status === 'Cancelled' ? (float) $booking->final_price : 0),
+                'Date & Time' => now()->format('d M Y, h:i A'),
+            ],
+        ];
+    }
+
+    /**
+     * The old paper form's "Plot Description" reads like "Residential
+     * Corner" -- the plot's category plus whichever of its special
+     * position flags (corner / park-facing / main boulevard) are true.
+     */
+    private function plotDescription(Plot $plot): string
+    {
+        $tags = array_filter([
+            $plot->corner_plot ? 'Corner' : null,
+            $plot->park_facing ? 'Park Facing' : null,
+            $plot->main_boulevard ? 'Main Boulevard' : null,
+        ]);
+
+        return trim($plot->category.' '.implode(' ', $tags));
     }
 
     /**
