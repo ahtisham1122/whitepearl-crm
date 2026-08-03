@@ -28,6 +28,12 @@ use Illuminate\Support\Collection;
  */
 class ReportService
 {
+    /**
+     * The late fee business rule: 1.5% of the overdue amount, per month
+     * overdue. See calculateFine() below for exactly how it's applied.
+     */
+    private const FINE_RATE_PER_MONTH = 0.015;
+
     public function clientsReport(?string $status): array
     {
         $status = in_array($status, ['Active', 'Inactive'], true) ? $status : null;
@@ -83,6 +89,85 @@ class ReportService
             'title' => 'Plots'.($status ? " ({$status})" : ''),
             'filename' => 'plots-report',
             'headings' => ['Plot Number', 'Block', 'Size', 'Category', 'Total Price', 'Status', 'Owner'],
+            'rows' => $rows,
+            'totalsRow' => null,
+        ];
+    }
+
+    /**
+     * The full detail report: every plot together with its owner and its
+     * entire installment schedule. A plot can have many installments, but
+     * "rows" (see the class docblock) can only ever be a flat table -- so
+     * each installment gets its own row, with the plot's own details
+     * repeated on every one of its rows. A plot with no booking yet (no
+     * owner, no installments) still gets exactly one row, with those
+     * columns shown as "—".
+     *
+     * Eager-loads block, the active booking, its client, and the whole
+     * installment plan in one go, so this is 3 queries total no matter how
+     * many plots or installments exist -- not one query per plot.
+     */
+    public function plotDetailReport(?string $blockId, ?string $status): array
+    {
+        $status = in_array($status, Plot::STATUSES, true) ? $status : null;
+
+        $plots = Plot::with(['block', 'activeBooking.client', 'activeBooking.installmentPlan.installments'])
+            ->when($blockId, fn ($query) => $query->where('block_id', $blockId))
+            ->when($status, fn ($query) => $query->where('status', $status))
+            ->orderBy('plot_number')
+            ->get();
+
+        $rows = $plots->flatMap(function (Plot $plot) {
+            $booking = $plot->activeBooking;
+            $installments = $booking?->installmentPlan?->installments ?? collect();
+
+            $totalPaid = $installments->sum(fn (Installment $i) => (float) $i->paid_amount);
+            $totalRemaining = $installments->sum(fn (Installment $i) => max($i->amount + $i->late_fee - $i->paid_amount, 0));
+
+            $plotColumns = [
+                'Plot Number' => $plot->plot_number,
+                'Block' => $plot->block->name,
+                'Size' => $plot->plot_size,
+                'Category' => $plot->category,
+                'Status' => $plot->status,
+                'Total Price' => $this->money($plot->total_price),
+                'Owner' => $booking?->client->full_name ?? '—',
+                'Owner CNIC' => $booking?->client->cnic ?? '—',
+            ];
+
+            if ($installments->isEmpty()) {
+                return [[
+                    ...$plotColumns,
+                    'Installment #' => '—',
+                    'Due Date' => '—',
+                    'Installment Amount' => '—',
+                    'Paid Amount' => '—',
+                    'Installment Status' => '—',
+                    'Total Paid (Plot)' => $this->money($totalPaid),
+                    'Total Remaining (Plot)' => $this->money($totalRemaining),
+                ]];
+            }
+
+            return $installments->map(fn (Installment $installment) => [
+                ...$plotColumns,
+                'Installment #' => $installment->installment_number,
+                'Due Date' => $installment->due_date->format('d M Y'),
+                'Installment Amount' => $this->money($installment->amount),
+                'Paid Amount' => $this->money($installment->paid_amount),
+                'Installment Status' => $installment->displayStatus(),
+                'Total Paid (Plot)' => $this->money($totalPaid),
+                'Total Remaining (Plot)' => $this->money($totalRemaining),
+            ])->all();
+        });
+
+        return [
+            'title' => 'Plot Report'.($status ? " ({$status})" : ''),
+            'filename' => 'plot-report',
+            'headings' => [
+                'Plot Number', 'Block', 'Size', 'Category', 'Status', 'Total Price', 'Owner', 'Owner CNIC',
+                'Installment #', 'Due Date', 'Installment Amount', 'Paid Amount', 'Installment Status',
+                'Total Paid (Plot)', 'Total Remaining (Plot)',
+            ],
             'rows' => $rows,
             'totalsRow' => null,
         ];
@@ -263,6 +348,161 @@ class ReportService
     }
 
     /**
+     * How many installments a client has paid tells us how far along they
+     * are, so this groups every active, installment-based booking by its
+     * count of Paid installments: 0 (down payment only) up to 8, with
+     * "8 or more" as the last bucket so a long payment plan never just
+     * falls off the report.
+     *
+     * One row per booking, not per client -- if a client owns two plots,
+     * each one has its own schedule and its own progress, so each gets its
+     * own row and can land in a different group.
+     */
+    public function installmentsPaidGroupingReport(): array
+    {
+        $bookings = Booking::where('status', 'Active')
+            ->whereHas('installmentPlan')
+            ->with(['client', 'plot.block', 'installmentPlan.installments'])
+            ->get();
+
+        $maxGroup = 8;
+
+        $withGroup = $bookings->map(function (Booking $booking) use ($maxGroup) {
+            $installments = $booking->installmentPlan->installments;
+            $paidCount = $installments->where('status', 'Paid')->count();
+            $amountPaid = (float) $booking->booking_amount + $installments->sum(fn (Installment $i) => (float) $i->paid_amount);
+            $remaining = $installments->sum(fn (Installment $i) => max($i->amount + $i->late_fee - $i->paid_amount, 0));
+
+            return [
+                'group' => min($paidCount, $maxGroup),
+                'row' => [
+                    'Group' => min($paidCount, $maxGroup) === $maxGroup ? "{$maxGroup} or more installments paid" : ($paidCount === 0 ? 'Down payment only (0 paid)' : "{$paidCount} installment(s) paid"),
+                    'Client' => $booking->client->full_name,
+                    'Plot' => $booking->plot->block->name.' - '.$booking->plot->plot_number,
+                    'Amount Paid' => $this->money($amountPaid),
+                    'Remaining' => $this->money($remaining),
+                ],
+            ];
+        })->sortBy('group');
+
+        $summary = $withGroup
+            ->groupBy('group')
+            ->map(fn ($group, $key) => [
+                'label' => $key === $maxGroup ? "{$maxGroup} or more installments paid" : ($key === 0 ? 'Down payment only (0 paid)' : "{$key} installment(s) paid"),
+                'count' => $group->count(),
+            ])
+            ->values();
+
+        return [
+            'title' => 'Clients Grouped by Installments Paid',
+            'filename' => 'installments-progress-report',
+            'headings' => ['Group', 'Client', 'Plot', 'Amount Paid', 'Remaining'],
+            'rows' => $withGroup->pluck('row')->values(),
+            'totalsRow' => null,
+            'summary' => $summary,
+        ];
+    }
+
+    /**
+     * How much 1.5%-per-month-overdue would suggest charging every client
+     * currently behind schedule, listed one row per booking. This report
+     * only ever displays the number -- see PaymentService::applyFine() for
+     * the one place it can actually be added to an installment, and only
+     * ever for one booking at a time, only when an admin clicks to confirm it.
+     */
+    public function lateFeeReport(): array
+    {
+        $legacyBookingIds = Payment::where('is_legacy', true)->pluck('booking_id')->unique();
+
+        $bookings = Booking::where('status', 'Active')
+            ->whereHas('installmentPlan.installments', fn ($query) => $query->where('due_date', '<', today())->where('status', '!=', 'Paid'))
+            ->with(['client', 'plot.block', 'installmentPlan.installments'])
+            ->get();
+
+        $defaulters = $bookings->map(function (Booking $booking) use ($legacyBookingIds) {
+            $fine = $this->calculateFine($booking);
+
+            return [
+                'booking' => $booking,
+                'is_legacy' => $legacyBookingIds->contains($booking->id),
+                ...$fine,
+            ];
+        })->sortByDesc('suggested_fine')->values();
+
+        $rows = $defaulters->map(fn (array $d) => [
+            'Client' => $d['booking']->client->full_name,
+            'CNIC' => $d['booking']->client->cnic,
+            'Plot' => $d['booking']->plot->block->name.' - '.$d['booking']->plot->plot_number,
+            'Overdue Amount' => $this->money($d['overdue_amount']),
+            'Months Overdue' => $d['months_overdue'],
+            'Suggested Fine (1.5%/month)' => $this->money($d['suggested_fine']),
+            'Data Source' => $d['is_legacy'] ? 'Imported (approx. dates)' : 'Live',
+        ]);
+
+        return [
+            'title' => 'Late Fee / Fine Suggestions',
+            'filename' => 'late-fee-report',
+            'headings' => ['Client', 'CNIC', 'Plot', 'Overdue Amount', 'Months Overdue', 'Suggested Fine (1.5%/month)', 'Data Source'],
+            'rows' => $rows,
+            'totalsRow' => null,
+            'defaulters' => $defaulters,
+        ];
+    }
+
+    /**
+     * Re-runs the fine calculation for one booking, fresh, at the moment an
+     * admin clicks "Apply" -- never trust a number sitting in a page that
+     * might have been open a while.
+     */
+    public function suggestedFineForBooking(Booking $booking): float
+    {
+        $booking->loadMissing('installmentPlan.installments');
+
+        return $this->calculateFine($booking)['suggested_fine'];
+    }
+
+    /**
+     * The 1.5%-per-month-overdue fine rule from the business requirements.
+     * "Overdue amount" is the original amount still owed on every
+     * installment that is past due and not fully paid -- late fees already
+     * sitting on an installment are deliberately excluded, otherwise a fine
+     * applied one month would itself get a fine calculated on top of it the
+     * next month, snowballing far past a flat 1.5%.
+     *
+     * "Months overdue" is counted from the earliest overdue installment's
+     * due date: being late at all counts as 1 month, then one more for
+     * every full 30 days after that. There is no partial-month discount.
+     *
+     * Imported (legacy) installments were given the import date as their
+     * due date rather than their real original due date (see
+     * BlockAImportService), so for those bookings "months overdue" is
+     * measured from the import date, not history -- the Late Fee Report
+     * flags this per row so nobody mistakes it for a real timeline.
+     *
+     * @return array{overdue_amount: float, months_overdue: int, suggested_fine: float}
+     */
+    private function calculateFine(Booking $booking): array
+    {
+        $overdueInstallments = ($booking->installmentPlan?->installments ?? collect())
+            ->filter(fn (Installment $installment) => $installment->status !== 'Paid' && $installment->due_date->lt(today()));
+
+        if ($overdueInstallments->isEmpty()) {
+            return ['overdue_amount' => 0.0, 'months_overdue' => 0, 'suggested_fine' => 0.0];
+        }
+
+        $overdueAmount = round($overdueInstallments->sum(fn (Installment $i) => max($i->amount - $i->paid_amount, 0)), 2);
+        $earliestDueDate = $overdueInstallments->min('due_date');
+        $monthsOverdue = max((int) floor($earliestDueDate->diffInDays(today()) / 30), 1);
+        $suggestedFine = round($overdueAmount * self::FINE_RATE_PER_MONTH * $monthsOverdue, 2);
+
+        return [
+            'overdue_amount' => $overdueAmount,
+            'months_overdue' => $monthsOverdue,
+            'suggested_fine' => $suggestedFine,
+        ];
+    }
+
+    /**
      * Outstanding balance for every client who has at least one active
      * booking, keyed by client_id. One query (with eager loading) plus an
      * in-memory group-and-sum -- not one query per client.
@@ -296,7 +536,7 @@ class ReportService
      * One place to change if the symbol setting is ever renamed or the
      * format ever needs to change, instead of every report doing its own thing.
      */
-    private function money(float $amount): string
+    public function money(float $amount): string
     {
         return setting('currency_symbol', 'Rs.').' '.number_format($amount, 2);
     }

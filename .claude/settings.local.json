@@ -58,7 +58,9 @@
       "Bash(powershell -Command 'Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\('\\\\''C:\\\\laragon\\\\www\\\\whitepearl-crm\\\\public\\\\images\\\\logo.png'\\\\''\\); Write-Output \\(\"New logo.png: {0}x{1}\" -f $img.Width, $img.Height\\); $img.Dispose\\(\\)')",
       "Bash(git restore *)",
       "Bash(powershell -Command \"Get-CimInstance Win32_Process -Filter \\\\\"CommandLine LIKE '%8002%'\\\\\" | Select-Object ProcessId,CommandLine\" 2>&1)",
-      "Bash(powershell -Command \"Stop-Process -Id 15996,15436,20400 -Force -ErrorAction SilentlyContinue\")"
+      "Bash(powershell -Command \"Stop-Process -Id 15996,15436,20400 -Force -ErrorAction SilentlyContinue\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://whitepearl-crm.test/login)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://127.0.0.1:8000/login)"
     ]
   }
 }

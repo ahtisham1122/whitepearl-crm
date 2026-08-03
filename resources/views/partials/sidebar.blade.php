@@ -112,6 +112,15 @@
                         <li class="{{ request()->routeIs('reports.sales*') ? 'active' : '' }}">
                             <a class="nxl-link" href="{{ route('reports.sales') }}">Sales Report</a>
                         </li>
+                        <li class="{{ request()->routeIs('reports.plot-detail*') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('reports.plot-detail') }}">Plot Report</a>
+                        </li>
+                        <li class="{{ request()->routeIs('reports.installments-progress*') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('reports.installments-progress') }}">Installments Paid Progress</a>
+                        </li>
+                        <li class="{{ request()->routeIs('reports.late-fees*') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('reports.late-fees') }}">Late Fee / Fine</a>
+                        </li>
                     </ul>
                 </li>
                 @hasanyrole('Super Admin|Admin')

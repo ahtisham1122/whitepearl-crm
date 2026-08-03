@@ -36,7 +36,24 @@
                             @include('reports.partials.filter-status')
                         @elseif ($filterType === 'date-range')
                             @include('reports.partials.filter-date-range')
+                        @elseif ($filterType === 'block-status')
+                            @include('reports.partials.filter-block-status')
                         @endif
+
+                        @isset($summary)
+                            <div class="row g-3 mb-4">
+                                @foreach ($summary as $group)
+                                    <div class="col-md-3 col-6">
+                                        <div class="card mb-0">
+                                            <div class="card-body text-center py-3">
+                                                <h4 class="mb-1">{{ $group['count'] }}</h4>
+                                                <p class="mb-0 text-muted fs-12">{{ $group['label'] }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endisset
 
                         @include('reports.partials.table')
                     </div>

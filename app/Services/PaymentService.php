@@ -180,6 +180,47 @@ class PaymentService
     }
 
     /**
+     * Apply an admin-confirmed lump-sum fine to one booking's account for
+     * being behind schedule. Unlike addLateFee() above (entered alongside an
+     * actual payment), this charges a fee with no money changing hands --
+     * it lands on whichever unpaid installment has been overdue the
+     * longest, the same installment ReportService used to work out how many
+     * months overdue this booking is. Never called automatically; only from
+     * an admin clicking "Apply" on one specific booking's suggested fine on
+     * the Late Fee Report.
+     */
+    public function applyFine(Booking $booking, float $amount): Installment
+    {
+        return DB::transaction(function () use ($booking, $amount) {
+            if ($amount <= 0) {
+                throw new \DomainException('There is no overdue amount to apply a fine for.');
+            }
+
+            $installment = $booking->installmentPlan
+                ?->installments()
+                ->where('status', '!=', 'Paid')
+                ->where('due_date', '<', today())
+                ->orderBy('due_date')
+                ->lockForUpdate()
+                ->first();
+
+            if (! $installment) {
+                throw new \DomainException('This booking has no overdue installment to apply a fine to.');
+            }
+
+            $installment->increment('late_fee', round($amount, 2));
+
+            activity('installment')
+                ->performedOn($installment)
+                ->causedBy(auth()->user())
+                ->withProperties(['amount' => round($amount, 2), 'booking_id' => $booking->id])
+                ->log('Late fee fine applied');
+
+            return $installment->fresh();
+        });
+    }
+
+    /**
      * A client's outstanding balance is not stored anywhere -- it's always
      * calculated fresh as the sum of what's still owed (amount + late fee
      * - paid so far) across every installment on their active bookings.

@@ -13,6 +13,9 @@ Route::middleware('auth')->prefix('reports')->name('reports.')->group(function (
         'due-installments' => 'dueInstallments',
         'defaulters' => 'defaulters',
         'sales' => 'sales',
+        'plot-detail' => 'plotDetail',
+        'installments-progress' => 'installmentsProgress',
+        'late-fees' => 'lateFees',
     ];
 
     foreach ($reports as $uri => $action) {
@@ -22,4 +25,8 @@ Route::middleware('auth')->prefix('reports')->name('reports.')->group(function (
             ->whereIn('format', ['excel', 'pdf'])
             ->name("{$uri}.export");
     }
+
+    // Applying a suggested late fee is a write action, admin-confirmed,
+    // one booking at a time -- not part of the generic read-only loop above.
+    Route::post('late-fees/{booking}/apply', [ReportController::class, 'applyLateFee'])->name('late-fees.apply');
 });
