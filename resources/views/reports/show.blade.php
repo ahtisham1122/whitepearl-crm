@@ -40,6 +40,10 @@
                             @include('reports.partials.filter-block-status')
                         @endif
 
+                        @isset($note)
+                            <div class="alert alert-info">{{ $note }}</div>
+                        @endisset
+
                         @isset($summary)
                             <div class="row g-3 mb-4">
                                 @foreach ($summary as $group)

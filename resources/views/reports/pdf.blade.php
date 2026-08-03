@@ -56,6 +56,10 @@
         <p>Generated {{ now()->format('d M Y, h:i A') }}</p>
     </div>
 
+    @isset($note)
+        <p style="text-align: center; font-style: italic; color: #6b7280;">{{ $note }}</p>
+    @endisset
+
     <table class="data">
         <thead>
             <tr>

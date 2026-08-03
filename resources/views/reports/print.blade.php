@@ -14,6 +14,10 @@
         @include('partials.company-header', ['subtitle' => $title])
         <p class="text-muted fs-12 text-center mb-4">Generated {{ now()->format('d M Y, h:i A') }}</p>
 
+        @isset($note)
+            <p class="text-muted fs-12 text-center mb-4"><em>{{ $note }}</em></p>
+        @endisset
+
         @isset($summary)
             <table class="table table-bordered mb-4">
                 <thead>

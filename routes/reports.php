@@ -16,6 +16,14 @@ Route::middleware('auth')->prefix('reports')->name('reports.')->group(function (
         'plot-detail' => 'plotDetail',
         'installments-progress' => 'installmentsProgress',
         'late-fees' => 'lateFees',
+        'available-plots' => 'availablePlots',
+        'wpc-property-plots' => 'wpcPropertyPlots',
+        'surrendered-plots' => 'surrenderedPlots',
+        'cancelled-plots' => 'cancelledPlots',
+        'disputed-plots' => 'disputedPlots',
+        'fully-paid-clients' => 'fullyPaidClients',
+        'partially-paid-clients' => 'partiallyPaidClients',
+        'client-defaulters' => 'clientDefaulters',
     ];
 
     foreach ($reports as $uri => $action) {

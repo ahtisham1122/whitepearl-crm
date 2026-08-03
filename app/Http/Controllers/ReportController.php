@@ -235,6 +235,130 @@ class ReportController extends Controller
         return $this->export($this->reportService->salesReport($request->input('from'), $request->input('to')), $format);
     }
 
+    // --- Plot-status reports -------------------------------------------------
+
+    public function availablePlots(): View
+    {
+        return $this->showReport($this->reportService->availablePlotsReport(), 'reports.available-plots', 'none');
+    }
+
+    public function availablePlotsPrint(): View
+    {
+        return $this->printReport($this->reportService->availablePlotsReport());
+    }
+
+    public function availablePlotsExport(string $format): BinaryFileResponse|Response
+    {
+        return $this->export($this->reportService->availablePlotsReport(), $format);
+    }
+
+    public function wpcPropertyPlots(): View
+    {
+        return $this->showReport($this->reportService->wpcPropertyPlotsReport(), 'reports.wpc-property-plots', 'none');
+    }
+
+    public function wpcPropertyPlotsPrint(): View
+    {
+        return $this->printReport($this->reportService->wpcPropertyPlotsReport());
+    }
+
+    public function wpcPropertyPlotsExport(string $format): BinaryFileResponse|Response
+    {
+        return $this->export($this->reportService->wpcPropertyPlotsReport(), $format);
+    }
+
+    public function surrenderedPlots(): View
+    {
+        return $this->showReport($this->reportService->surrenderedPlotsReport(), 'reports.surrendered-plots', 'none');
+    }
+
+    public function surrenderedPlotsPrint(): View
+    {
+        return $this->printReport($this->reportService->surrenderedPlotsReport());
+    }
+
+    public function surrenderedPlotsExport(string $format): BinaryFileResponse|Response
+    {
+        return $this->export($this->reportService->surrenderedPlotsReport(), $format);
+    }
+
+    public function cancelledPlots(): View
+    {
+        return $this->showReport($this->reportService->cancelledPlotsReport(), 'reports.cancelled-plots', 'none');
+    }
+
+    public function cancelledPlotsPrint(): View
+    {
+        return $this->printReport($this->reportService->cancelledPlotsReport());
+    }
+
+    public function cancelledPlotsExport(string $format): BinaryFileResponse|Response
+    {
+        return $this->export($this->reportService->cancelledPlotsReport(), $format);
+    }
+
+    public function disputedPlots(): View
+    {
+        return $this->showReport($this->reportService->disputedPlotsReport(), 'reports.disputed-plots', 'none');
+    }
+
+    public function disputedPlotsPrint(): View
+    {
+        return $this->printReport($this->reportService->disputedPlotsReport());
+    }
+
+    public function disputedPlotsExport(string $format): BinaryFileResponse|Response
+    {
+        return $this->export($this->reportService->disputedPlotsReport(), $format);
+    }
+
+    // --- Client payment-status reports ----------------------------------------
+
+    public function fullyPaidClients(): View
+    {
+        return $this->showReport($this->reportService->fullyPaidClientsReport(), 'reports.fully-paid-clients', 'none');
+    }
+
+    public function fullyPaidClientsPrint(): View
+    {
+        return $this->printReport($this->reportService->fullyPaidClientsReport());
+    }
+
+    public function fullyPaidClientsExport(string $format): BinaryFileResponse|Response
+    {
+        return $this->export($this->reportService->fullyPaidClientsReport(), $format);
+    }
+
+    public function partiallyPaidClients(): View
+    {
+        return $this->showReport($this->reportService->partiallyPaidClientsReport(), 'reports.partially-paid-clients', 'none');
+    }
+
+    public function partiallyPaidClientsPrint(): View
+    {
+        return $this->printReport($this->reportService->partiallyPaidClientsReport());
+    }
+
+    public function partiallyPaidClientsExport(string $format): BinaryFileResponse|Response
+    {
+        return $this->export($this->reportService->partiallyPaidClientsReport(), $format);
+    }
+
+    public function clientDefaulters(): View
+    {
+        return $this->showReport($this->reportService->clientDefaultersReport(), 'reports.client-defaulters', 'none');
+    }
+
+    public function clientDefaultersPrint(): View
+    {
+        return $this->printReport($this->reportService->clientDefaultersReport());
+    }
+
+    public function clientDefaultersExport(string $format): BinaryFileResponse|Response
+    {
+        return $this->export($this->reportService->clientDefaultersReport(), $format);
+    }
+
     // --- Plot detail report (full detail with installment plan) -------------
 
     public function plotDetail(Request $request): View
