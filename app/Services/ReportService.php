@@ -70,29 +70,47 @@ class ReportService
         ];
     }
 
-    public function plotsReport(?string $status): array
+    /**
+     * The one page for "show me plots in this situation" -- every status
+     * from Available through Disputed, filterable by status and/or block
+     * instead of a separate page per status. One admin, one page, one
+     * dropdown to change what they're looking at.
+     *
+     * "Owner" prefers the plot's current Active booking, but falls back to
+     * its most recent booking of any status -- so a Cancelled plot still
+     * shows who used to hold it instead of a blank, without needing a
+     * second column just for that one status.
+     */
+    public function plotsReport(?string $blockId, ?string $status): array
     {
         $status = in_array($status, Plot::STATUSES, true) ? $status : null;
 
-        $plots = Plot::with(['block', 'activeBooking.client'])
+        $plots = Plot::with(['block', 'bookings' => fn ($query) => $query->latest('booking_date')->with('client')])
+            ->when($blockId, fn ($query) => $query->where('block_id', $blockId))
             ->when($status, fn ($query) => $query->where('status', $status))
             ->orderBy('plot_number')
             ->get();
 
-        $rows = $plots->map(fn (Plot $plot) => [
-            'Plot Number' => $plot->plot_number,
-            'Block' => $plot->block->name,
-            'Size' => $plot->plot_size,
-            'Category' => $plot->category,
-            'Total Price' => $this->money($plot->total_price),
-            'Status' => $plot->status,
-            'Owner' => $plot->activeBooking?->client->full_name ?? '—',
-        ]);
+        $rows = $plots->map(function (Plot $plot) {
+            $owner = $plot->bookings->firstWhere('status', 'Active')?->client
+                ?? $plot->bookings->first()?->client;
+
+            return [
+                'Plot Number' => $plot->plot_number,
+                'Block' => $plot->block->name,
+                'Size' => $plot->plot_size,
+                'Category' => $plot->category,
+                'Status' => $plot->status,
+                'Total Price' => $this->money($plot->total_price),
+                'Owner' => $owner?->full_name ?? '—',
+                'Remarks' => $plot->remarks ?? '—',
+            ];
+        });
 
         return [
-            'title' => 'Plots'.($status ? " ({$status})" : ''),
+            'title' => 'Plots Report'.($status ? " ({$status})" : ''),
             'filename' => 'plots-report',
-            'headings' => ['Plot Number', 'Block', 'Size', 'Category', 'Total Price', 'Status', 'Owner'],
+            'headings' => ['Plot Number', 'Block', 'Size', 'Category', 'Status', 'Total Price', 'Owner', 'Remarks'],
             'rows' => $rows,
             'totalsRow' => null,
         ];
@@ -351,256 +369,45 @@ class ReportService
         ];
     }
 
-    // --- Plot-status reports -------------------------------------------------
-    // Each is a fixed-status slice of the plots table -- no filter dropdown,
-    // because a plot with, say, status Surrendered will never need to be
-    // looked at alongside Available ones on the same page.
-
-    public function availablePlotsReport(): array
-    {
-        return $this->plotsWithStatusReport('Available', 'Available Plots', 'available-plots-report', false);
-    }
-
-    public function wpcPropertyPlotsReport(): array
-    {
-        return $this->plotsWithStatusReport('WPC Property', 'WPC Property Plots', 'wpc-property-plots-report', true);
-    }
-
-    public function surrenderedPlotsReport(): array
-    {
-        return $this->plotsWithStatusReport('Surrendered', 'Surrendered Plots', 'surrendered-plots-report', true);
-    }
+    // --- Client payment-status report -----------------------------------------
 
     /**
-     * A Cancelled plot's own record doesn't say who used to own it or how
-     * much they'd paid -- that lives on the Cancelled booking underneath
-     * it. The booking eager-load below is constrained to status Cancelled,
-     * so $plot->bookings only ever holds that one (a plot can carry other,
-     * older bookings too, but only the cancelled one matters here).
+     * One page, one dropdown, instead of four separate report pages -- every
+     * booking that has an installment plan gets sorted into exactly one
+     * payment-status bucket below, and the dropdown just shows/hides
+     * buckets rather than running a different query per page. See
+     * classifyClientPaymentStatus() for the actual rules; this method's
+     * only job is to run one efficient query, classify every row in
+     * memory, then keep only the bucket the admin asked for.
+     *
+     * The 'note' key is picked up by reports.show/print as an info banner
+     * (see the class docblock's report shape) -- it's relevant here
+     * because "Overdue" depends on due_date, and imported installments'
+     * due_date is the import date, not their real original due date.
      */
-    public function cancelledPlotsReport(): array
+    public function clientsPaymentStatusReport(?string $status): array
     {
-        $plots = Plot::where('status', 'Cancelled')
-            ->with([
-                'block',
-                'bookings' => fn ($query) => $query->where('status', 'Cancelled')->with(['client', 'installmentPlan.installments']),
-            ])
-            ->orderBy('plot_number')
+        $validStatuses = ['Fully Paid', 'Partially Paid', 'Defaulters', 'Down-payment only'];
+        $status = in_array($status, $validStatuses, true) ? $status : null;
+
+        $bookings = Booking::whereIn('status', ['Active', 'Cancelled'])
+            ->whereHas('installmentPlan')
+            ->with(['client', 'plot.block', 'installmentPlan.installments'])
             ->get();
 
-        $rows = $plots->map(function (Plot $plot) {
-            $booking = $plot->bookings->first();
-            $installments = $booking?->installmentPlan?->installments ?? collect();
-            $amountPaid = $booking
-                ? (float) $booking->booking_amount + $installments->sum(fn (Installment $i) => (float) $i->paid_amount)
-                : 0.0;
+        $classified = $bookings->map(fn (Booking $booking) => $this->classifyClientPaymentStatus($booking));
 
-            return [
-                'Plot Number' => $plot->plot_number,
-                'Block' => $plot->block->name,
-                'Former Client' => $booking?->client->full_name ?? '—',
-                'Amount Paid Before Cancelling' => $this->money($amountPaid),
-                'Remarks' => $plot->remarks ?? '—',
-            ];
-        });
-
-        return [
-            'title' => 'Cancelled Plots',
-            'filename' => 'cancelled-plots-report',
-            'headings' => ['Plot Number', 'Block', 'Former Client', 'Amount Paid Before Cancelling', 'Remarks'],
-            'rows' => $rows,
-            'totalsRow' => null,
-        ];
-    }
-
-    /**
-     * "Client (if any)" because a Disputed plot doesn't always have one --
-     * it might be a plot with a genuine ownership dispute over an existing
-     * booking, or one flagged as disputed before it was ever sold.
-     */
-    public function disputedPlotsReport(): array
-    {
-        $plots = Plot::where('status', 'Disputed')
-            ->with([
-                'block',
-                'bookings' => fn ($query) => $query->latest('booking_date')->with('client'),
-            ])
-            ->orderBy('plot_number')
-            ->get();
-
-        $rows = $plots->map(function (Plot $plot) {
-            $client = $plot->bookings->first()?->client;
-
-            return [
-                'Plot Number' => $plot->plot_number,
-                'Block' => $plot->block->name,
-                'Client' => $client?->full_name ?? '—',
-                'Remarks' => $plot->remarks ?? '—',
-            ];
-        });
-
-        return [
-            'title' => 'Disputed Plots',
-            'filename' => 'disputed-plots-report',
-            'headings' => ['Plot Number', 'Block', 'Client', 'Remarks'],
-            'rows' => $rows,
-            'totalsRow' => null,
-        ];
-    }
-
-    /**
-     * Shared by the three simple plot-status lists above, which only ever
-     * differ by which status they filter on and whether Remarks is worth
-     * showing (Available plots never have anything worth remarking on;
-     * WPC Property and Surrendered plots, both legacy-only outcomes,
-     * usually do).
-     */
-    private function plotsWithStatusReport(string $status, string $title, string $filename, bool $includeRemarks): array
-    {
-        $plots = Plot::where('status', $status)->with('block')->orderBy('plot_number')->get();
-
-        $rows = $plots->map(function (Plot $plot) use ($includeRemarks) {
-            $row = [
-                'Plot Number' => $plot->plot_number,
-                'Block' => $plot->block->name,
-                'Size' => $plot->plot_size,
-                'Category' => $plot->category,
-                'Total Price' => $this->money($plot->total_price),
-            ];
-
-            if ($includeRemarks) {
-                $row['Remarks'] = $plot->remarks ?? '—';
-            }
-
-            return $row;
-        });
-
-        $headings = ['Plot Number', 'Block', 'Size', 'Category', 'Total Price'];
-
-        if ($includeRemarks) {
-            $headings[] = 'Remarks';
+        if ($status) {
+            $buckets = $status === 'Defaulters' ? ['Cancelled', 'Overdue'] : [$status];
+            $classified = $classified->filter(fn (array $row) => in_array($row['bucket'], $buckets, true));
         }
 
-        return [
-            'title' => $title,
-            'filename' => $filename,
-            'headings' => $headings,
-            'rows' => $rows,
-            'totalsRow' => null,
-        ];
-    }
-
-    // --- Client payment-status reports ----------------------------------------
-
-    /**
-     * "Fully paid" is decided by the installment plan's own status, not by
-     * the plot's status field -- a plot stays "Sold" for the rest of its
-     * life even after every installment on it is paid off. That one
-     * Completed flag also already covers legacy imports: BlockAImportService
-     * sets a plan straight to Completed at import time when the sheet
-     * showed nothing still owed, so this single condition finds both a
-     * client who just finished paying through this system and one whose
-     * plot was already fully paid before it was ever imported.
-     */
-    public function fullyPaidClientsReport(): array
-    {
-        $bookings = Booking::where('status', 'Active')
-            ->whereHas('installmentPlan', fn ($query) => $query->where('status', 'Completed'))
-            ->with(['client', 'plot.block', 'installmentPlan.installments'])
-            ->get();
-
-        $rows = $bookings->map(function (Booking $booking) {
-            $installments = $booking->installmentPlan->installments;
-            $totalPaid = (float) $booking->booking_amount + $installments->sum(fn (Installment $i) => (float) $i->paid_amount);
-
-            return [
-                'Client' => $booking->client->full_name,
-                'Plot' => $booking->plot->block->name.' - '.$booking->plot->plot_number,
-                'Total Price' => $this->money($booking->final_price),
-                'Total Paid' => $this->money($totalPaid),
-            ];
-        });
+        $rows = $classified->map(fn (array $row) => $row['row'])->values();
 
         return [
-            'title' => 'Fully Paid Clients',
-            'filename' => 'fully-paid-clients-report',
-            'headings' => ['Client', 'Plot', 'Total Price', 'Total Paid'],
-            'rows' => $rows,
-            'totalsRow' => null,
-        ];
-    }
-
-    /**
-     * "Partially paid" sits strictly between the other two client
-     * payment-status reports: the plan isn't Completed (that's Fully Paid
-     * Clients above) and at least one installment has actually been paid
-     * (otherwise they've only ever made the down payment, which belongs on
-     * the Clients Grouped by Installments Paid report's "0 paid" bucket,
-     * not here).
-     */
-    public function partiallyPaidClientsReport(): array
-    {
-        $bookings = Booking::where('status', 'Active')
-            ->whereHas('installmentPlan', fn ($query) => $query->where('status', '!=', 'Completed'))
-            ->whereHas('installmentPlan.installments', fn ($query) => $query->where('status', 'Paid'))
-            ->with(['client', 'plot.block', 'installmentPlan.installments'])
-            ->get();
-
-        $rows = $bookings->map(function (Booking $booking) {
-            $installments = $booking->installmentPlan->installments;
-            $totalPaid = (float) $booking->booking_amount + $installments->sum(fn (Installment $i) => (float) $i->paid_amount);
-            $remaining = $installments->sum(fn (Installment $i) => max($i->amount + $i->late_fee - $i->paid_amount, 0));
-            $paidCount = $installments->where('status', 'Paid')->count();
-
-            return [
-                'Client' => $booking->client->full_name,
-                'Plot' => $booking->plot->block->name.' - '.$booking->plot->plot_number,
-                'Total Paid' => $this->money($totalPaid),
-                'Remaining' => $this->money($remaining),
-                'Installments Paid' => $paidCount,
-            ];
-        });
-
-        return [
-            'title' => 'Partially Paid Clients',
-            'filename' => 'partially-paid-clients-report',
-            'headings' => ['Client', 'Plot', 'Total Paid', 'Remaining', 'Installments Paid'],
-            'rows' => $rows,
-            'totalsRow' => null,
-        ];
-    }
-
-    /**
-     * A client who "stopped paying" shows up one of two ways: their
-     * booking was actually cancelled (they stopped, and it was formally
-     * closed out), or their booking is still Active but they've gone quiet
-     * with at least one installment now overdue. Both belong on the same
-     * list -- the Status column says which is which -- because both are
-     * the same real-world situation from the office's point of view: money
-     * that stopped coming in.
-     *
-     * The 'note' key below is picked up by reports.show/print as an info
-     * banner -- see the class docblock's report shape.
-     */
-    public function clientDefaultersReport(): array
-    {
-        $cancelled = Booking::where('status', 'Cancelled')
-            ->with(['client', 'plot.block', 'installmentPlan.installments'])
-            ->get()
-            ->map(fn (Booking $booking) => $this->clientDefaulterRow($booking, 'Cancelled'));
-
-        $overdue = Booking::where('status', 'Active')
-            ->whereHas('installmentPlan.installments', fn ($query) => $query->where('due_date', '<', today())->where('status', '!=', 'Paid'))
-            ->with(['client', 'plot.block', 'installmentPlan.installments'])
-            ->get()
-            ->map(fn (Booking $booking) => $this->clientDefaulterRow($booking, 'Overdue'));
-
-        $rows = $cancelled->concat($overdue)->values();
-
-        return [
-            'title' => 'Defaulters (Cancelled or Overdue)',
-            'filename' => 'client-defaulters-report',
-            'headings' => ['Client', 'Plot', 'Status', 'Total Paid', 'Remaining / Overdue Amount', 'Phone'],
+            'title' => 'Clients Report (Payment Status)'.($status ? " - {$status}" : ''),
+            'filename' => 'clients-payment-status-report',
+            'headings' => ['Client', 'Plot', 'Status', 'Total Paid', 'Remaining', 'Installments Paid', 'Phone'],
             'rows' => $rows,
             'totalsRow' => null,
             'note' => 'Imported (legacy) installments were given the import date as their due date, not their real original due date -- so for those clients, "Overdue" is measured from the import date, not true history.',
@@ -608,26 +415,63 @@ class ReportService
     }
 
     /**
-     * @param  'Cancelled'|'Overdue'  $reason
+     * Every booking with an installment plan falls into exactly one of
+     * five buckets, checked in this order:
+     *
+     *   1. Cancelled   -- the booking itself was cancelled (stopped paying,
+     *                      and it was formally closed out).
+     *   2. Fully Paid  -- the installment plan's own status is Completed.
+     *                      Checked by that flag, not the plot's status
+     *                      field, because a plot stays "Sold" forever even
+     *                      after it's paid off -- and the same Completed
+     *                      flag is what BlockAImportService sets on a
+     *                      legacy plan that was already fully paid before
+     *                      it was ever imported, so this one check covers
+     *                      both live and legacy clients.
+     *   3. Overdue     -- still Active, but at least one installment is
+     *                      past its due date and not fully paid. Checked
+     *                      before "how far along" buckets below, because a
+     *                      client who stopped paying partway through is a
+     *                      defaulter regardless of how much they'd already
+     *                      paid before they stopped.
+     *   4. Down-payment only -- Active, not overdue, and not a single
+     *                      installment has been paid yet.
+     *   5. Partially Paid -- everything else: Active, not overdue, at
+     *                      least one installment paid, but not all of them.
+     *
+     * Cancelled and Overdue share one on-screen label each ("Cancelled" /
+     * "Overdue") so the Defaulters filter option can show which is which
+     * in the same Status column, exactly as the other three buckets show
+     * their own name.
      */
-    private function clientDefaulterRow(Booking $booking, string $reason): array
+    private function classifyClientPaymentStatus(Booking $booking): array
     {
-        $installments = $booking->installmentPlan?->installments ?? collect();
+        $installments = $booking->installmentPlan->installments;
         $totalPaid = (float) $booking->booking_amount + $installments->sum(fn (Installment $i) => (float) $i->paid_amount);
+        $paidCount = $installments->where('status', 'Paid')->count();
+        $hasOverdue = $installments->contains(fn (Installment $i) => $i->status !== 'Paid' && $i->due_date->lt(today()));
 
-        $amount = $reason === 'Cancelled'
-            ? $installments->sum(fn (Installment $i) => max($i->amount + $i->late_fee - $i->paid_amount, 0))
-            : $installments
-                ->filter(fn (Installment $i) => $i->status !== 'Paid' && $i->due_date->lt(today()))
-                ->sum(fn (Installment $i) => max($i->amount + $i->late_fee - $i->paid_amount, 0));
+        $bucket = match (true) {
+            $booking->status === 'Cancelled' => 'Cancelled',
+            $booking->installmentPlan->status === 'Completed' => 'Fully Paid',
+            $hasOverdue => 'Overdue',
+            $paidCount === 0 => 'Down-payment only',
+            default => 'Partially Paid',
+        };
+
+        $remaining = $installments->sum(fn (Installment $i) => max($i->amount + $i->late_fee - $i->paid_amount, 0));
 
         return [
-            'Client' => $booking->client->full_name,
-            'Plot' => $booking->plot->block->name.' - '.$booking->plot->plot_number,
-            'Status' => $reason,
-            'Total Paid' => $this->money($totalPaid),
-            'Remaining / Overdue Amount' => $this->money($amount),
-            'Phone' => $booking->client->phone,
+            'bucket' => $bucket,
+            'row' => [
+                'Client' => $booking->client->full_name,
+                'Plot' => $booking->plot->block->name.' - '.$booking->plot->plot_number,
+                'Status' => $bucket,
+                'Total Paid' => $this->money($totalPaid),
+                'Remaining' => $this->money($remaining),
+                'Installments Paid' => $paidCount,
+                'Phone' => $booking->client->phone,
+            ],
         ];
     }
 

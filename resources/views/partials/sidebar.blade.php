@@ -92,7 +92,7 @@
                             <a class="nxl-link" href="{{ route('reports.clients') }}">All Clients</a>
                         </li>
                         <li class="{{ request()->routeIs('reports.plots*') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('reports.plots') }}">Plots by Status</a>
+                            <a class="nxl-link" href="{{ route('reports.plots') }}">Plots Report</a>
                         </li>
                         <li class="{{ request()->routeIs('reports.blocks*') ? 'active' : '' }}">
                             <a class="nxl-link" href="{{ route('reports.blocks') }}">Block-wise Summary</a>
@@ -121,29 +121,8 @@
                         <li class="{{ request()->routeIs('reports.late-fees*') ? 'active' : '' }}">
                             <a class="nxl-link" href="{{ route('reports.late-fees') }}">Late Fee / Fine</a>
                         </li>
-                        <li class="{{ request()->routeIs('reports.available-plots*') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('reports.available-plots') }}">Available Plots</a>
-                        </li>
-                        <li class="{{ request()->routeIs('reports.wpc-property-plots*') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('reports.wpc-property-plots') }}">WPC Property Plots</a>
-                        </li>
-                        <li class="{{ request()->routeIs('reports.surrendered-plots*') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('reports.surrendered-plots') }}">Surrendered Plots</a>
-                        </li>
-                        <li class="{{ request()->routeIs('reports.cancelled-plots*') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('reports.cancelled-plots') }}">Cancelled Plots</a>
-                        </li>
-                        <li class="{{ request()->routeIs('reports.disputed-plots*') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('reports.disputed-plots') }}">Disputed Plots</a>
-                        </li>
-                        <li class="{{ request()->routeIs('reports.fully-paid-clients*') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('reports.fully-paid-clients') }}">Fully Paid Clients</a>
-                        </li>
-                        <li class="{{ request()->routeIs('reports.partially-paid-clients*') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('reports.partially-paid-clients') }}">Partially Paid Clients</a>
-                        </li>
-                        <li class="{{ request()->routeIs('reports.client-defaulters*') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('reports.client-defaulters') }}">Defaulters (Stopped Paying)</a>
+                        <li class="{{ request()->routeIs('reports.client-payment-status*') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('reports.client-payment-status') }}">Clients Report (Payment Status)</a>
                         </li>
                     </ul>
                 </li>
